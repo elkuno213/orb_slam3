@@ -1,30 +1,27 @@
-# Build
+.git/
+.gitignore
+
 build/
 
-# Thirdparty: cloned inside Docker
 Thirdparty/librealsense/
 Thirdparty/Pangolin/
 Thirdparty/*/build/
 Thirdparty/*/lib/
-Thirdparty/g2o/config.h
 
-# Compiled example binaries (RUNTIME_OUTPUT_DIRECTORY -> Examples/)
 Examples*/**/mono_*
 Examples*/**/stereo_*
 Examples*/**/rgbd_*
 Examples*/**/recorder_*
 !Examples*/**/*.cc
 
-# Vocabulary (extracted at build time)
-Vocabulary/ORBvoc.txt
-
-# Python
-__pycache__/
-
-# Tools
+.vscode/
 .claude/
 .serena/
 
-# Data
 datasets/
 results/
+Examples_old/
+
+*.md
+*.pdf
+LICENSE

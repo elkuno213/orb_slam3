@@ -39,6 +39,7 @@ cmake -B build                           \
       -DCMAKE_BUILD_TYPE=Release         \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ninja -C build -j 4
+sudo cmake --install build
 cd ../../
 
 echo "Configuring and building Thirdparty/g2o ..."
@@ -50,6 +51,7 @@ cmake -B build                           \
       -DCMAKE_BUILD_TYPE=Release         \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ninja -C build -j 4
+sudo cmake --install build
 cd ../../
 
 echo "Configuring and building Thirdparty/Sophus ..."
@@ -61,6 +63,7 @@ cmake -B build                           \
       -DCMAKE_BUILD_TYPE=Release         \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ninja -C build -j 4
+sudo cmake --install build
 cd ../../
 
 echo "Uncompress vocabulary ..."

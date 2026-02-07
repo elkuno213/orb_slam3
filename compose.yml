@@ -1,0 +1,37 @@
+services:
+  orb-slam3:
+    build:
+      context: .
+      target: runtime
+    image: orb-slam3:runtime
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - XAUTHORITY=/tmp/.Xauthority
+      - LIBGL_ALWAYS_SOFTWARE=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/tmp/.Xauthority:ro
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true
+
+  orb-slam3-dev:
+    build:
+      context: .
+      target: deps
+    image: orb-slam3:dev
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - XAUTHORITY=/tmp/.Xauthority
+      - LIBGL_ALWAYS_SOFTWARE=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/tmp/.Xauthority:ro
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+      - .:/orb_slam3
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true

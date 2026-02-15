@@ -23,12 +23,21 @@ void LoadMonocularImages(
   while (!fTimes.eof()) {
     std::string s;
     std::getline(fTimes, s);
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
+    }
+
     if (!s.empty()) {
-      std::stringstream ss;
-      ss << s;
-      vstrImages.push_back(strImagePath + "/" + ss.str() + ".png");
-      double t;
-      ss >> t;
+      if (s[0] == '#') {
+        continue;
+      }
+
+      std::size_t pos = s.find(',');
+      std::string ts  = s.substr(0, pos);
+      std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
+
+      vstrImages.push_back(strImagePath + "/" + img);
+      double t = std::stod(ts);
       vTimeStamps.push_back(t * 1e-9);
     }
   }
@@ -50,13 +59,22 @@ void LoadStereoImages(
   while (!fTimes.eof()) {
     std::string s;
     std::getline(fTimes, s);
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
+    }
+
     if (!s.empty()) {
-      std::stringstream ss;
-      ss << s;
-      vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
-      vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
-      double t;
-      ss >> t;
+      if (s[0] == '#') {
+        continue;
+      }
+
+      std::size_t pos = s.find(',');
+      std::string ts  = s.substr(0, pos);
+      std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
+
+      vstrImageLeft.push_back(strPathLeft + "/" + img);
+      vstrImageRight.push_back(strPathRight + "/" + img);
+      double t = std::stod(ts);
       vTimeStamps.push_back(t * 1e-9);
     }
   }
@@ -77,11 +95,15 @@ void LoadIMU(
   while (!fImu.eof()) {
     std::string s;
     std::getline(fImu, s);
-    if (s[0] == '#') {
-      continue;
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
     }
 
     if (!s.empty()) {
+      if (s[0] == '#') {
+        continue;
+      }
+
       std::string item;
       std::size_t pos = 0;
       double      data[7];
@@ -107,7 +129,8 @@ bool ParseArguments(
   std::string&              vocabulary_file,
   std::string&              settings_file,
   std::vector<std::string>& sequences,
-  std::string&              output_dir
+  std::string&              output_dir,
+  bool&                     use_viewer
 ) {
   po::options_description desc("Allowed options");
   // clang-format off
@@ -116,7 +139,8 @@ bool ParseArguments(
     ("vocabulary-file", po::value<std::string>(&vocabulary_file)->required(), "Path to vocabulary text file")
     ("settings-file", po::value<std::string>(&settings_file)->required(), "Path to settings yaml file")
     ("sequences", po::value<std::vector<std::string>>(&sequences)->multitoken()->required(), "Pairs of image folders and time files")
-    ("output-dir", po::value<std::string>(&output_dir)->default_value("/tmp"), "Path to output directory");
+    ("output-dir", po::value<std::string>(&output_dir)->default_value("/tmp"), "Path to output directory")
+    ("no-viewer", "Disable the Pangolin viewer");
   // clang-format on
 
   po::variables_map vm;
@@ -156,6 +180,8 @@ bool ParseArguments(
   if (!fs::is_directory(output_dir)) {
     throw po::error("Output directory does NOT exist: " + output_dir);
   }
+
+  use_viewer = vm.count("no-viewer") == 0;
 
   return true;
 }

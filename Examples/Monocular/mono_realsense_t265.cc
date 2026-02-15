@@ -53,13 +53,15 @@ int main(int argc, char** argv) {
 
   // Parse arguments.
   std::string vocabulary_file, settings_file, output_dir;
+  bool        use_viewer = true;
   try {
     const bool parsed = ORB_SLAM3::RealSense::ParseArguments(
       argc,
       argv,
       vocabulary_file,
       settings_file,
-      output_dir
+      output_dir,
+      use_viewer
     );
     if (!parsed) {
       return 0;
@@ -91,8 +93,9 @@ int main(int argc, char** argv) {
     rs2::pipeline_profile pipe_profile = pipe.start(cfg);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, true);
-    float             imageScale = SLAM.GetImageScale();
+    ORB_SLAM3::System
+          SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, use_viewer);
+    float imageScale = SLAM.GetImageScale();
 
     cv::Mat imCV;
 

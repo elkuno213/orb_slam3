@@ -24,7 +24,8 @@ bool ParseArguments(
   std::string& vocabulary_file,
   std::string& settings_file,
   std::string& sequence_dir,
-  std::string& output_dir
+  std::string& output_dir,
+  bool&        use_viewer
 );
 
 } // namespace ORB_SLAM3::KITTI

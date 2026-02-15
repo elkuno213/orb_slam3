@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
   // Parse arguments.
   std::string              vocabulary_file, settings_file, output_dir;
   std::vector<std::string> sequences;
+  bool                     use_viewer = true;
   try {
     const bool parsed = ORB_SLAM3::TUMVI::ParseArguments(
       argc,
@@ -57,7 +58,8 @@ int main(int argc, char** argv) {
       settings_file,
       sequences,
       output_dir,
-      ORB_SLAM3::Sensor::InertialMonocular
+      ORB_SLAM3::Sensor::Monocular,
+      use_viewer
     );
     if (!parsed) {
       return 0;
@@ -108,8 +110,9 @@ int main(int argc, char** argv) {
     vTimesTrack.resize(tot_images);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System
-          SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, false, 0, output_dir);
+    ORB_SLAM3::System SLAM(
+      vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, use_viewer, 0, output_dir
+    );
     float imageScale = SLAM.GetImageScale();
 
     double t_resize = 0.f;

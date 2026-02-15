@@ -35,7 +35,8 @@ bool ParseArguments(
   std::string&              vocabulary_filename,
   std::string&              settings_filename,
   std::vector<std::string>& sequences,
-  std::string&              output_dir
+  std::string&              output_dir,
+  bool&                     use_viewer
 );
 
 } // namespace ORB_SLAM3::EuRoC

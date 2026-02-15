@@ -55,13 +55,15 @@ int main(int argc, char** argv) {
 
   // Parse arguments.
   std::string vocabulary_file, settings_file, output_dir;
+  bool        use_viewer = true;
   try {
     const bool parsed = ORB_SLAM3::RealSense::ParseArguments(
       argc,
       argv,
       vocabulary_file,
       settings_file,
-      output_dir
+      output_dir,
+      use_viewer
     );
     if (!parsed) {
       return 0;
@@ -74,8 +76,9 @@ int main(int argc, char** argv) {
   // Run.
 
   try {
-    ORB_SLAM3::System
-          SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::IMU_STEREO, true, 0, output_dir);
+    ORB_SLAM3::System SLAM(
+      vocabulary_file, settings_file, ORB_SLAM3::System::IMU_STEREO, use_viewer, 0, output_dir
+    );
     float imageScale = SLAM.GetImageScale();
 
     struct sigaction sigIntHandler;

@@ -3,7 +3,7 @@
   "cmake.configureOnOpen": false,
   // clangd
   "C_Cpp.intelliSenseEngine": "disabled",
-  "clangd.path": "/usr/bin/clangd-15",
+  "clangd.path": "/usr/bin/clangd",
   "clangd.arguments": [
     "--query-driver=/usr/bin/c++", // for cross compile usage
     "--compile-commands-dir=${workspaceFolder}/build",
@@ -15,6 +15,6 @@
     "-ferror-limit=0"
   ],
   "[cpp]": {
-    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    "editor.defaultFormatter": "KylinIdeTeam.kylin-clangd"
   }
 }

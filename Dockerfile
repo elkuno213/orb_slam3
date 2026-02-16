@@ -58,11 +58,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /orb_slam3
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Intel RealSense SDK — camera interface for D435i / T265 examples.                                #
-# Built from source with -DBUILD_WITH_DDS=OFF to avoid the fastcdr/fastrtps                        #
-# dependency whose Ubuntu packages lack CMake exported targets.                                    #
-
+# Intel RealSense SDK — camera interface for D435i / T265 examples.
+# Built from source with -DBUILD_WITH_DDS=OFF to avoid the fastcdr/fastrtps dependency whose Ubuntu
+# packages lack CMake exported targets.
 RUN git clone --depth 1 --branch v2.56.5 \
         https://github.com/IntelRealSense/librealsense.git Thirdparty/librealsense
 RUN --mount=type=cache,target=/orb_slam3/Thirdparty/librealsense/build        \
@@ -77,9 +75,7 @@ RUN --mount=type=cache,target=/orb_slam3/Thirdparty/librealsense/build        \
     && ninja -C Thirdparty/librealsense/build -j"$(nproc)"                    \
     && cmake --install Thirdparty/librealsense/build
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Pangolin — 3D visualization and UI framework used by ORB-SLAM3's map viewer                      #
-
+# Pangolin — 3D visualization and UI framework used by ORB-SLAM3's map viewer #
 RUN git clone --recursive --depth 1 --branch v0.9.4 \
         https://github.com/stevenlovegrove/Pangolin.git Thirdparty/Pangolin
 RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Pangolin/build    \
@@ -92,9 +88,7 @@ RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Pangolin/build    \
     && ninja -C Thirdparty/Pangolin/build -j"$(nproc)"                \
     && cmake --install Thirdparty/Pangolin/build
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# DBoW2 — bag-of-words library for visual place recognition and loop closure                       #
-
+# DBoW2 — bag-of-words library for visual place recognition and loop closure
 COPY Thirdparty/DBoW2/ Thirdparty/DBoW2/
 RUN --mount=type=cache,target=/orb_slam3/Thirdparty/DBoW2/build \
     cmake -B Thirdparty/DBoW2/build -S Thirdparty/DBoW2 -GNinja \
@@ -102,9 +96,7 @@ RUN --mount=type=cache,target=/orb_slam3/Thirdparty/DBoW2/build \
     && ninja -C Thirdparty/DBoW2/build -j"$(nproc)"             \
     && cmake --install Thirdparty/DBoW2/build
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# g2o — general graph optimization framework for pose-graph and bundle adjustment                  #
-
+# g2o — general graph optimization framework for pose-graph and bundle adjustment
 COPY Thirdparty/g2o/ Thirdparty/g2o/
 RUN --mount=type=cache,target=/orb_slam3/Thirdparty/g2o/build \
     cmake -B Thirdparty/g2o/build -S Thirdparty/g2o -GNinja   \
@@ -112,9 +104,7 @@ RUN --mount=type=cache,target=/orb_slam3/Thirdparty/g2o/build \
     && ninja -C Thirdparty/g2o/build -j"$(nproc)"             \
     && cmake --install Thirdparty/g2o/build
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Sophus — header-only C++ Lie group library (SO3/SE3) used for rigid-body transforms              #
-
+# Sophus — header-only C++ Lie group library (SO3/SE3) used for rigid-body transforms
 COPY Thirdparty/Sophus/ Thirdparty/Sophus/
 RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Sophus/build  \
     cmake -B Thirdparty/Sophus/build -S Thirdparty/Sophus -GNinja \
@@ -127,9 +117,7 @@ RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Sophus/build  \
 # Ensure all shared libraries installed to /usr/local/lib are discoverable
 RUN ldconfig
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# ORB vocabulary — pre-trained visual word dictionary for DBoW2 place recognition                  #
-
+# ORB vocabulary — pre-trained visual word dictionary for DBoW2 place recognition
 COPY Vocabulary/ Vocabulary/
 WORKDIR /orb_slam3/Vocabulary
 RUN tar -xf ORBvoc.txt.tar.gz
@@ -161,7 +149,6 @@ FROM ubuntu:22.04 AS runtime
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Runtime-only shared libraries (no -dev headers or build tools).
-# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
         # OpenGL / EGL / Wayland / X11                           \
         libegl1                                                  \
@@ -220,3 +207,18 @@ COPY --from=builder /orb_slam3/Examples/ Examples/
 RUN ldconfig
 
 ENTRYPOINT ["/bin/bash"]
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Stage 4: evo — evaluation with Python + evo toolkit + SLAM binaries                             #
+
+FROM runtime AS evo
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 python3-pip git \
+    && pip3 install --no-cache-dir evo \
+    && rm -rf /var/lib/apt/lists/*
+
+ENTRYPOINT []
+CMD ["/bin/bash"]

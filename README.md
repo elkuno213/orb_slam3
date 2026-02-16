@@ -28,19 +28,30 @@ docker compose build orb-slam3-dev   # Dev image (full build environment)
 
 ```bash
 xhost +local:docker
-docker compose run orb-slam3
+docker compose run --rm orb-slam3
 
-# Example — run monocular EuRoC:
-./Examples/Monocular/mono_euroc \
-  Vocabulary/ORBvoc.txt \
-  Examples/Monocular/EuRoC.yaml \
-  /datasets/MH_01_easy \
-  Examples/Monocular/EuRoC_TimeStamps/MH01.txt
+# Example — run RGB-D on TUM fr2_large_with_loop:
+rgbd_tum \
+  --vocabulary-file Vocabulary/ORBvoc.txt \
+  --settings-file Examples/RGB-D/TUM2.yaml \
+  --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
+  --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
 
 xhost -local:docker
 ```
 
-Custom dataset path: `DATASETS_DIR=/path/to/datasets docker compose run orb-slam3`
+Custom dataset path: `DATASETS_DIR=/path/to/datasets docker compose run --rm orb-slam3`
+
+All example binaries support `--no-viewer` to disable the Pangolin GUI (useful for headless environments or benchmarking):
+
+```bash
+rgbd_tum \
+  --no-viewer \
+  --vocabulary-file Vocabulary/ORBvoc.txt \
+  --settings-file Examples/RGB-D/TUM2.yaml \
+  --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
+  --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
+```
 
 ### Development
 
@@ -49,7 +60,7 @@ Thirdparty dependencies are pre-installed to `/usr/local` and unaffected by the 
 
 ```bash
 xhost +local:docker
-docker compose run orb-slam3-dev
+docker compose run --rm orb-slam3-dev
 
 # Build:
 cmake -B build -S . -GNinja -DCMAKE_BUILD_TYPE=Release
@@ -71,6 +82,39 @@ The build produces `build/compile_commands.json` for clangd/clang-tidy (visible 
 | `DATASETS_DIR` | `./datasets` | Host path mounted at `/datasets` |
 | `LIBGL_ALWAYS_SOFTWARE` | `1` | Mesa software rendering (no GPU required) |
 
+
+### Evaluation
+
+The `orb-slam3-evo` service provides headless trajectory evaluation using the [evo](https://github.com/MichaelGrupp/evo) toolkit. No X11 server is required.
+
+```bash
+# Build the evo image (incremental, reuses cached runtime layer):
+docker compose build orb-slam3-evo
+
+# Run a single-run baseline on one test:
+docker compose run --rm orb-slam3-evo \
+  python3 -u evaluation/verify.py baseline \
+    --tests rgbd_tum_fr2_large_with_loop --runs 1
+
+# Verify against baseline:
+docker compose run --rm orb-slam3-evo \
+  python3 -u evaluation/verify.py verify
+
+# Run a specific binary headlessly:
+docker compose run --rm orb-slam3-evo \
+  rgbd_tum --no-viewer \
+    --vocabulary-file Vocabulary/ORBvoc.txt \
+    --settings-file Examples/RGB-D/TUM2.yaml \
+    --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
+    --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
+```
+
+Results are written to `./results/` on the host (mounted at `/orb_slam3/results` inside the container).
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATASETS_DIR` | `./datasets` | Host path mounted read-only at `/datasets` |
+| `PYTHONUNBUFFERED` | `1` | Flush Python output in real time |
 
 ## Modernization Roadmap
 

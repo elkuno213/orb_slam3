@@ -35,3 +35,18 @@ services:
     network_mode: host
     stdin_open: true
     tty: true
+
+  orb-slam3-evo:
+    build:
+      context: .
+      target: evo
+    image: orb-slam3:evo
+    environment:
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+      - ./results:/orb_slam3/results
+      - ./evaluation:/orb_slam3/evaluation
+    stdin_open: true
+    tty: true

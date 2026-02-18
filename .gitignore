@@ -20,6 +20,7 @@ Vocabulary/ORBvoc.txt
 
 # Python
 __pycache__/
+.ruff_cache/
 
 # Tools
 .claude/

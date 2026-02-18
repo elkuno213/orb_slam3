@@ -2,7 +2,7 @@
 # ORB-SLAM3 #
 
 cmake_minimum_required(VERSION 3.15...4.1)
-project(orb_slam3 VERSION 1.0.5 LANGUAGES CXX)
+project(orb_slam3 VERSION 1.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 

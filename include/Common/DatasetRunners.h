@@ -27,9 +27,9 @@ class EuRoCRunner : public DatasetRunner {
 public:
   explicit EuRoCRunner(const RunConfig& config);
 
-  void              load() override;
-  [[nodiscard]] int numSequences() const override;
-  [[nodiscard]] int numImages(int seq) const override;
+  void                 load() override;
+  [[nodiscard]] int    numSequences() const override;
+  [[nodiscard]] int    numImages(int seq) const override;
   [[nodiscard]] double readFrame(
     int seq, int ni, float image_scale, cv::Mat& im, cv::Mat& im_right, cv::Mat& depth
   ) override;
@@ -47,9 +47,9 @@ class KittiRunner : public DatasetRunner {
 public:
   explicit KittiRunner(const RunConfig& config);
 
-  void              load() override;
-  [[nodiscard]] int numSequences() const override;
-  [[nodiscard]] int numImages(int seq) const override;
+  void                 load() override;
+  [[nodiscard]] int    numSequences() const override;
+  [[nodiscard]] int    numImages(int seq) const override;
   [[nodiscard]] double readFrame(
     int seq, int ni, float image_scale, cv::Mat& im, cv::Mat& im_right, cv::Mat& depth
   ) override;
@@ -66,9 +66,9 @@ class TumRunner : public DatasetRunner {
 public:
   explicit TumRunner(const RunConfig& config);
 
-  void              load() override;
-  [[nodiscard]] int numSequences() const override;
-  [[nodiscard]] int numImages(int seq) const override;
+  void                 load() override;
+  [[nodiscard]] int    numSequences() const override;
+  [[nodiscard]] int    numImages(int seq) const override;
   [[nodiscard]] double readFrame(
     int seq, int ni, float image_scale, cv::Mat& im, cv::Mat& im_right, cv::Mat& depth
   ) override;
@@ -86,23 +86,25 @@ class TumViRunner : public DatasetRunner {
 public:
   explicit TumViRunner(const RunConfig& config);
 
-  void              load() override;
-  [[nodiscard]] int numSequences() const override;
-  [[nodiscard]] int numImages(int seq) const override;
+  void                 load() override;
+  [[nodiscard]] int    numSequences() const override;
+  [[nodiscard]] int    numImages(int seq) const override;
   [[nodiscard]] double readFrame(
     int seq, int ni, float image_scale, cv::Mat& im, cv::Mat& im_right, cv::Mat& depth
   ) override;
   [[nodiscard]] std::vector<IMU::Point> collectImu(int seq, int ni) override;
   [[nodiscard]] System::eSensor         sensorType() const noexcept override;
   [[nodiscard]] TrajectoryFormat        trajectoryFormat() const noexcept override;
-  [[nodiscard]] bool useClahe() const noexcept override;
-  [[nodiscard]] int  imreadMode() const noexcept override;
+  [[nodiscard]] bool                    useClahe() const noexcept override;
+  [[nodiscard]] int                     imreadMode() const noexcept override;
+  [[nodiscard]] std::string             sequenceParam() const noexcept override;
 
 private:
   System::eSensor          _sensor_type;
   bool                     _has_imu;
   bool                     _is_stereo;
   std::vector<std::string> _raw_sequences;
+  std::string              _output_dir;
 };
 
 } // namespace ORB_SLAM3

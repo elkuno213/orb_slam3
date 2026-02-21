@@ -18,15 +18,18 @@
  */
 
 #include "Common/DatasetRunner.h"
+#include <filesystem>
+#include <fstream>
 #include <iterator>
 #include <gtest/gtest.h>
 #include "Common/DatasetRunners.h"
 
+namespace fs = std::filesystem;
+
 namespace ORB_SLAM3 {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper to build argc/argv from a vector of strings
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Helper to build argc/argv from a vector of strings                                             //
 
 class ArgvBuilder {
 public:
@@ -47,9 +50,8 @@ private:
   std::vector<char*>       _ptrs;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CLI Parsing Tests
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// CLI Parsing Tests                                                                              //
 
 class ParseUnifiedTest : public ::testing::Test {
 protected:
@@ -205,9 +207,99 @@ TEST_F(ParseUnifiedTest, TumRgbdMissingAssociationThrows) {
   EXPECT_THROW(parseUnifiedArguments(ab.argc(), ab.argv(), config), std::exception);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Factory Tests (RunConfig -> correct runner type + properties)
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// CLI Happy-Path Test (uses temp files for file validation)                                      //
+
+class ParseUnifiedHappyPathTest : public ::testing::Test {
+protected:
+  void SetUp() override {
+    _tmp_dir = fs::temp_directory_path() / "orbslam3_test_cli";
+    fs::create_directories(_tmp_dir);
+
+    // Create dummy vocab and settings files.
+    _vocab_path    = _tmp_dir / "vocab.txt";
+    _settings_path = _tmp_dir / "settings.yaml";
+    std::ofstream(_vocab_path.string()) << "dummy vocab\n";
+    std::ofstream(_settings_path.string()) << "dummy settings\n";
+  }
+
+  void TearDown() override {
+    fs::remove_all(_tmp_dir);
+  }
+
+  fs::path _tmp_dir;
+  fs::path _vocab_path;
+  fs::path _settings_path;
+};
+
+TEST_F(ParseUnifiedHappyPathTest, KittiMonoParsesCorrectly) {
+  const std::string seq_dir = _tmp_dir.string();
+  ArgvBuilder       ab({
+    "prog",
+    "--dataset",
+    "kitti",
+    "--sensor",
+    "mono",
+    "--vocabulary-file",
+    _vocab_path.string(),
+    "--settings-file",
+    _settings_path.string(),
+    "--output-dir",
+    _tmp_dir.string(),
+    "--no-viewer",
+    "--sequence-dir",
+    seq_dir,
+  });
+
+  RunConfig config;
+  ASSERT_TRUE(parseUnifiedArguments(ab.argc(), ab.argv(), config));
+
+  EXPECT_EQ(config.dataset, "kitti");
+  EXPECT_EQ(config.sensor, "mono");
+  EXPECT_FALSE(config.inertial);
+  EXPECT_FALSE(config.use_viewer);
+  EXPECT_EQ(config.vocabulary_file, _vocab_path.string());
+  EXPECT_EQ(config.settings_file, _settings_path.string());
+  EXPECT_EQ(config.output_dir, _tmp_dir.string());
+  EXPECT_EQ(config.sequence_dir, seq_dir);
+}
+
+TEST_F(ParseUnifiedHappyPathTest, EurocStereoInertialParsesCorrectly) {
+  ArgvBuilder ab({
+    "prog",
+    "--dataset",
+    "euroc",
+    "--sensor",
+    "stereo",
+    "--inertial",
+    "--vocabulary-file",
+    _vocab_path.string(),
+    "--settings-file",
+    _settings_path.string(),
+    "--output-dir",
+    _tmp_dir.string(),
+    "--sequences",
+    "/data/V101",
+    "timestamps.txt",
+    "--output-format",
+    "tum",
+  });
+
+  RunConfig config;
+  ASSERT_TRUE(parseUnifiedArguments(ab.argc(), ab.argv(), config));
+
+  EXPECT_EQ(config.dataset, "euroc");
+  EXPECT_EQ(config.sensor, "stereo");
+  EXPECT_TRUE(config.inertial);
+  EXPECT_TRUE(config.use_viewer);
+  EXPECT_EQ(config.output_format, "tum");
+  ASSERT_EQ(config.sequences.size(), 2u);
+  EXPECT_EQ(config.sequences[0], "/data/V101");
+  EXPECT_EQ(config.sequences[1], "timestamps.txt");
+}
+
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Factory Tests (RunConfig -> correct runner type + properties) //
 
 TEST(FactoryTest, EurocMono) {
   RunConfig config;
@@ -304,16 +396,55 @@ TEST(FactoryTest, UnknownDatasetThrows) {
   EXPECT_THROW(createDatasetRunner(config), std::invalid_argument);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// IMU Sync Tests (synthetic data injected directly into SequenceData)
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// sequenceParam Tests                                                                            //
+
+TEST(SequenceParamTest, EurocReturnsEmpty) {
+  RunConfig config;
+  config.dataset   = "euroc";
+  config.sensor    = "mono";
+  config.sequences = {"/data/MH01", "ts.txt"};
+  auto runner      = createDatasetRunner(config);
+  EXPECT_TRUE(runner->sequenceParam().empty());
+}
+
+TEST(SequenceParamTest, KittiReturnsEmpty) {
+  RunConfig config;
+  config.dataset      = "kitti";
+  config.sensor       = "stereo";
+  config.sequence_dir = "/data/kitti";
+  auto runner         = createDatasetRunner(config);
+  EXPECT_TRUE(runner->sequenceParam().empty());
+}
+
+TEST(SequenceParamTest, TumReturnsEmpty) {
+  RunConfig config;
+  config.dataset      = "tum";
+  config.sensor       = "mono";
+  config.sequence_dir = "/data/tum";
+  auto runner         = createDatasetRunner(config);
+  EXPECT_TRUE(runner->sequenceParam().empty());
+}
+
+TEST(SequenceParamTest, TumviReturnsOutputDir) {
+  RunConfig config;
+  config.dataset    = "tumvi";
+  config.sensor     = "mono";
+  config.sequences  = {"/data/room1", "ts.txt"};
+  config.output_dir = "/custom/output";
+  auto runner       = createDatasetRunner(config);
+  EXPECT_EQ(runner->sequenceParam(), "/custom/output");
+}
+
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// IMU Sync Tests (synthetic data injected directly into SequenceData)                            //
 
 /// Helper: create a EuRoCRunner with synthetic IMU data injected via load() bypass.
 /// We construct the runner, then manually populate _sequences through a test subclass.
 class TestableEuRoCRunner : public EuRoCRunner {
 public:
-  using EuRoCRunner::EuRoCRunner;
   using EuRoCRunner::_sequences;
+  using EuRoCRunner::EuRoCRunner;
 };
 
 class ImuSyncTest : public ::testing::Test {
@@ -391,7 +522,7 @@ TEST_F(ImuSyncTest, CollectImuAllFramesConsumesAll) {
 TEST_F(ImuSyncTest, CollectImuBoundsCheckPreventsOverread) {
   // Force first_imu to near end and verify no overread.
   auto& sd     = _runner->_sequences[0];
-  sd.first_imu = 9;  // Last IMU element.
+  sd.first_imu = 9; // Last IMU element.
   // Collect for frame 4 (t=5.0): IMU[9]=5.0 <= 5.0 → collect. first_imu=10 = size, stops.
   auto imu = _runner->collectImu(0, 4);
   EXPECT_EQ(imu.size(), 1u);
@@ -407,9 +538,8 @@ TEST_F(ImuSyncTest, FirstImuComputedCorrectly) {
   EXPECT_EQ(_runner->_sequences[0].first_imu, 1);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Non-IMU runner collectImu always returns empty
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Non-IMU runner collectImu always returns empty                                                 //
 
 TEST(NonImuRunnerTest, KittiCollectImuReturnsEmpty) {
   RunConfig config;
@@ -429,9 +559,8 @@ TEST(NonImuRunnerTest, TumCollectImuReturnsEmpty) {
   EXPECT_TRUE(runner->collectImu(0, 5).empty());
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trajectory Format Mapping
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Trajectory Format Mapping                                                                      //
 
 TEST(TrajectoryFormatTest, EurocUsesEuroc) {
   RunConfig config;

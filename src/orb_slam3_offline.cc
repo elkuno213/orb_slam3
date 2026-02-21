@@ -63,17 +63,14 @@ int main(int argc, char** argv) {
     const int num_seq = runner->numSequences();
     spdlog::info("Number of sequences: {}", num_seq);
 
-    // Create SLAM system. TUM-VI passes output_dir as the sequence string parameter;
-    // all other datasets pass an empty string (matches legacy binary behavior).
-    const std::string system_seq_param
-      = (config.dataset == "tumvi") ? config.output_dir : std::string{};
+    // Create SLAM system. The sequence parameter is dataset-specific (non-empty for TUM-VI).
     ORB_SLAM3::System slam(
       config.vocabulary_file,
       config.settings_file,
       runner->sensorType(),
       config.use_viewer,
       0,
-      system_seq_param
+      runner->sequenceParam()
     );
     const float image_scale = slam.GetImageScale();
 
@@ -138,18 +135,19 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        const auto   t2     = std::chrono::steady_clock::now();
-        const double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+        const auto   t2 = std::chrono::steady_clock::now();
+        const double ttrack
+          = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
 
         // Real-time pacing: wait if tracking was faster than the frame interval.
-        double T = 0;
+        double frame_interval = 0.0;
         if (ni < n_images - 1) {
-          T = runner->timestamp(seq, ni + 1) - tframe;
+          frame_interval = runner->timestamp(seq, ni + 1) - tframe;
         } else if (ni > 0) {
-          T = tframe - runner->timestamp(seq, ni - 1);
+          frame_interval = tframe - runner->timestamp(seq, ni - 1);
         }
-        if (ttrack < T) {
-          std::this_thread::sleep_for(std::chrono::duration<double>(T - ttrack));
+        if (ttrack < frame_interval) {
+          std::this_thread::sleep_for(std::chrono::duration<double>(frame_interval - ttrack));
         }
       }
 

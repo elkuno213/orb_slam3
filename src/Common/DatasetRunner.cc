@@ -30,9 +30,8 @@ namespace po = boost::program_options;
 
 namespace ORB_SLAM3 {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Factory
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Factory                                                                                        //
 
 std::unique_ptr<DatasetRunner> createDatasetRunner(const RunConfig& config) {
   if (config.dataset == "euroc") {
@@ -50,9 +49,8 @@ std::unique_ptr<DatasetRunner> createDatasetRunner(const RunConfig& config) {
   throw std::invalid_argument("Unknown dataset: " + config.dataset);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CLI Parser
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// CLI Parser                                                                                     //
 
 namespace {
 
@@ -170,9 +168,8 @@ bool parseUnifiedArguments(int argc, char** argv, RunConfig& config) {
   return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trajectory Saver
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// Trajectory Saver                                                                               //
 
 void saveTrajectory(
   System& slam, TrajectoryFormat format, System::eSensor sensor, const std::string& output_dir

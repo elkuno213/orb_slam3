@@ -18,6 +18,7 @@
  */
 
 #include "Common/DatasetRunners.h"
+#include <cmath>
 #include <iterator>
 #include <stdexcept>
 #include <opencv2/imgcodecs.hpp>
@@ -30,9 +31,17 @@
 
 namespace ORB_SLAM3 {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// EuRoCRunner
-// ─────────────────────────────────────────────────────────────────────────────
+namespace {
+
+/// Check if image resizing is needed (avoids floating-point equality with 1.0f).
+[[nodiscard]] bool needsResize(float image_scale) noexcept {
+  return std::abs(image_scale - 1.f) > 1e-6f;
+}
+
+} // namespace
+
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// EuRoCRunner                                                                                    //
 
 EuRoCRunner::EuRoCRunner(const RunConfig& config)
   : _sensor_type([&] {
@@ -46,7 +55,17 @@ EuRoCRunner::EuRoCRunner(const RunConfig& config)
 }
 
 void EuRoCRunner::load() {
-  const int num_seq = static_cast<int>(_raw_sequences.size()) / 2;
+  constexpr int kStride = 2; // (sequence_path, timestamps_file) per sequence.
+  const auto    n_args  = static_cast<int>(_raw_sequences.size());
+  if (n_args % kStride != 0) {
+    spdlog::warn(
+      "EuRoC: --sequences has {} args, not divisible by {} — trailing args ignored",
+      n_args,
+      kStride
+    );
+  }
+
+  const int num_seq = n_args / kStride;
   _sequences.resize(num_seq);
 
   for (int seq = 0; seq < num_seq; seq++) {
@@ -133,9 +152,9 @@ double EuRoCRunner::readFrame(
     }
   }
 
-  if (image_scale != 1.f) {
-    int width  = static_cast<int>(im.cols * image_scale);
-    int height = static_cast<int>(im.rows * image_scale);
+  if (needsResize(image_scale)) {
+    const int width  = static_cast<int>(im.cols * image_scale);
+    const int height = static_cast<int>(im.rows * image_scale);
     cv::resize(im, im, cv::Size(width, height));
     if (!im_right.empty()) {
       cv::resize(im_right, im_right, cv::Size(width, height));
@@ -176,9 +195,8 @@ TrajectoryFormat EuRoCRunner::trajectoryFormat() const noexcept {
   return TrajectoryFormat::kEuRoC;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// KittiRunner
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// KittiRunner                                                                                    //
 
 KittiRunner::KittiRunner(const RunConfig& config)
   : _sensor_type(config.sensor == "mono" ? System::MONOCULAR : System::STEREO)
@@ -232,9 +250,9 @@ double KittiRunner::readFrame(
     }
   }
 
-  if (image_scale != 1.f) {
-    int width  = static_cast<int>(im.cols * image_scale);
-    int height = static_cast<int>(im.rows * image_scale);
+  if (needsResize(image_scale)) {
+    const int width  = static_cast<int>(im.cols * image_scale);
+    const int height = static_cast<int>(im.rows * image_scale);
     cv::resize(im, im, cv::Size(width, height));
     if (!im_right.empty()) {
       cv::resize(im_right, im_right, cv::Size(width, height));
@@ -256,9 +274,8 @@ TrajectoryFormat KittiRunner::trajectoryFormat() const noexcept {
   return (_sensor_type == System::MONOCULAR) ? TrajectoryFormat::kTUM : TrajectoryFormat::kKITTI;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TumRunner
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// TumRunner                                                                                      //
 
 TumRunner::TumRunner(const RunConfig& config)
   : _sensor_type(config.sensor == "mono" ? System::MONOCULAR : System::RGBD)
@@ -316,9 +333,9 @@ double TumRunner::readFrame(
     }
   }
 
-  if (image_scale != 1.f) {
-    int width  = static_cast<int>(im.cols * image_scale);
-    int height = static_cast<int>(im.rows * image_scale);
+  if (needsResize(image_scale)) {
+    const int width  = static_cast<int>(im.cols * image_scale);
+    const int height = static_cast<int>(im.rows * image_scale);
     cv::resize(im, im, cv::Size(width, height));
     if (!depth.empty()) {
       cv::resize(depth, depth, cv::Size(width, height));
@@ -340,9 +357,8 @@ TrajectoryFormat TumRunner::trajectoryFormat() const noexcept {
   return TrajectoryFormat::kTUM;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TumViRunner
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// TumViRunner                                                                                    //
 
 TumViRunner::TumViRunner(const RunConfig& config)
   : _sensor_type([&] {
@@ -353,7 +369,8 @@ TumViRunner::TumViRunner(const RunConfig& config)
   }())
   , _has_imu(config.inertial)
   , _is_stereo(config.sensor == "stereo")
-  , _raw_sequences(config.sequences) {
+  , _raw_sequences(config.sequences)
+  , _output_dir(config.output_dir) {
 }
 
 void TumViRunner::load() {
@@ -370,11 +387,20 @@ void TumViRunner::load() {
     stride++;
   }
 
-  const int num_seq = static_cast<int>(_raw_sequences.size()) / stride;
+  const auto n_args = static_cast<int>(_raw_sequences.size());
+  if (n_args % stride != 0) {
+    spdlog::warn(
+      "TUM-VI: --sequences has {} args, not divisible by {} — trailing args ignored",
+      n_args,
+      stride
+    );
+  }
+
+  const int num_seq = n_args / stride;
   _sequences.resize(num_seq);
 
   for (int seq = 0; seq < num_seq; seq++) {
-    int idx = seq * stride;
+    const int idx = seq * stride;
 
     std::string path_images;
     std::string path_right;
@@ -478,9 +504,9 @@ double TumViRunner::readFrame(
     }
   }
 
-  if (image_scale != 1.f) {
-    int width  = static_cast<int>(im.cols * image_scale);
-    int height = static_cast<int>(im.rows * image_scale);
+  if (needsResize(image_scale)) {
+    const int width  = static_cast<int>(im.cols * image_scale);
+    const int height = static_cast<int>(im.rows * image_scale);
     cv::resize(im, im, cv::Size(width, height));
     if (!im_right.empty()) {
       cv::resize(im_right, im_right, cv::Size(width, height));
@@ -527,6 +553,10 @@ bool TumViRunner::useClahe() const noexcept {
 
 int TumViRunner::imreadMode() const noexcept {
   return cv::IMREAD_GRAYSCALE;
+}
+
+std::string TumViRunner::sequenceParam() const noexcept {
+  return _output_dir;
 }
 
 } // namespace ORB_SLAM3

@@ -6,19 +6,24 @@ to use the unified orb_slam3_offline binary.
 
 from __future__ import annotations
 
+import copy
+
+import numpy as np
 import pytest
+from evo.core.trajectory import PoseTrajectory3D
 
 from verify import (
     UNIFIED_BINARY,
     TestConfig,
     _UNIFIED_MAPPING,
+    compute_ate_rmse,
+    read_euroc_output,
     to_unified,
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Fixtures
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Fixtures                                                                                          #
 
 
 def _make_config(
@@ -39,9 +44,8 @@ def _make_config(
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# to_unified: basic transformation
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# to_unified: basic transformation                                                                  #
 
 
 class TestToUnified:
@@ -103,9 +107,8 @@ class TestToUnified:
         assert result.trajectory_filename == "Custom.txt"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# to_unified: all mapped tests produce valid configs
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# to_unified: all mapped tests produce valid configs                                                #
 
 
 @pytest.mark.parametrize("test_name", list(_UNIFIED_MAPPING.keys()))
@@ -118,9 +121,8 @@ def test_all_mappings_produce_valid_config(test_name: str) -> None:
     assert "--sensor" in result.command_args
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# to_unified: error handling
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# to_unified: error handling                                                                        #
 
 
 def test_unmapped_test_raises_key_error() -> None:
@@ -129,9 +131,8 @@ def test_unmapped_test_raises_key_error() -> None:
         to_unified(config)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# _UNIFIED_MAPPING: correctness
-# ─────────────────────────────────────────────────────────────────────────────
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# _UNIFIED_MAPPING: correctness                                                                     #
 
 
 class TestUnifiedMapping:
@@ -176,3 +177,138 @@ class TestUnifiedMapping:
         for name, (_, sensor, _) in _UNIFIED_MAPPING.items():
             if name.startswith("mono_") and not name.startswith("mono_inertial"):
                 assert sensor == "mono", f"{name} should map to mono sensor"
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# read_euroc_output: trajectory parsing                                                             #
+
+
+class TestReadEurocOutput:
+    """Tests for the read_euroc_output() function."""
+
+    def test_timestamps_converted_from_ns_to_seconds(self, tmp_path: "Path") -> None:
+        data = np.array([
+            [1e9, 0, 0, 0, 0, 0, 0, 1],
+            [2e9, 1, 0, 0, 0, 0, 0, 1],
+            [3e9, 2, 0, 0, 0, 0, 0, 1],
+        ])
+        filepath = tmp_path / "traj.txt"
+        np.savetxt(str(filepath), data)
+        traj = read_euroc_output(filepath)
+        np.testing.assert_allclose(traj.timestamps, [1.0, 2.0, 3.0])
+
+    def test_quaternion_reordered_from_xyzw_to_wxyz(self, tmp_path: "Path") -> None:
+        # File format: ts tx ty tz qx qy qz qw
+        data = np.array([[1e9, 0, 0, 0, 0.1, 0.2, 0.3, 0.4]])
+        filepath = tmp_path / "traj.txt"
+        np.savetxt(str(filepath), data)
+        traj = read_euroc_output(filepath)
+        # Expected: (qw, qx, qy, qz) = (0.4, 0.1, 0.2, 0.3)
+        np.testing.assert_allclose(
+            traj.orientations_quat_wxyz[0],
+            [0.4, 0.1, 0.2, 0.3],
+        )
+
+    def test_positions_extracted_correctly(self, tmp_path: "Path") -> None:
+        data = np.array([
+            [1e9, 1.5, 2.5, 3.5, 0, 0, 0, 1],
+            [2e9, 4.5, 5.5, 6.5, 0, 0, 0, 1],
+        ])
+        filepath = tmp_path / "traj.txt"
+        np.savetxt(str(filepath), data)
+        traj = read_euroc_output(filepath)
+        np.testing.assert_allclose(traj.positions_xyz[0], [1.5, 2.5, 3.5])
+        np.testing.assert_allclose(traj.positions_xyz[1], [4.5, 5.5, 6.5])
+
+    def test_wrong_column_count_raises_value_error(self, tmp_path: "Path") -> None:
+        data = np.array([[1e9, 0, 0, 0, 0, 0]])  # 6 cols instead of 8
+        filepath = tmp_path / "traj.txt"
+        np.savetxt(str(filepath), data)
+        with pytest.raises(ValueError, match="Expected 8 columns"):
+            read_euroc_output(filepath)
+
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# compute_ate_rmse: metric computation                                                              #
+
+
+class TestComputeAteRmse:
+    """Tests for the compute_ate_rmse() function."""
+
+    def test_identical_trajectories_give_zero_rmse(self) -> None:
+        timestamps = np.array([0.0, 1.0, 2.0])
+        positions = np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0]], dtype=float)
+        quats = np.array([[1, 0, 0, 0]] * 3, dtype=float)
+        traj = PoseTrajectory3D(
+            positions_xyz=positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        rmse = compute_ate_rmse(traj, copy.deepcopy(traj), "se3")
+        assert rmse < 1e-10
+
+    def test_constant_offset_removed_by_se3_alignment(self) -> None:
+        timestamps = np.array([0.0, 1.0, 2.0, 3.0])
+        ref_positions = np.array(
+            [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
+            dtype=float,
+        )
+        est_positions = ref_positions + np.array([5.0, 0, 0])
+        quats = np.array([[1, 0, 0, 0]] * 4, dtype=float)
+        traj_ref = PoseTrajectory3D(
+            positions_xyz=ref_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        traj_est = PoseTrajectory3D(
+            positions_xyz=est_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        rmse = compute_ate_rmse(traj_ref, traj_est, "se3")
+        assert rmse < 1e-6
+
+    def test_nonrigid_difference_gives_nonzero_rmse(self) -> None:
+        timestamps = np.array([0.0, 1.0, 2.0, 3.0])
+        ref_positions = np.array(
+            [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
+            dtype=float,
+        )
+        est_positions = np.array(
+            [[0, 0, 0], [1, 0.5, 0], [2, 0, 0], [3, 0.5, 0]],
+            dtype=float,
+        )
+        quats = np.array([[1, 0, 0, 0]] * 4, dtype=float)
+        traj_ref = PoseTrajectory3D(
+            positions_xyz=ref_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        traj_est = PoseTrajectory3D(
+            positions_xyz=est_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        rmse = compute_ate_rmse(traj_ref, traj_est, "se3")
+        assert rmse > 0.1
+
+    def test_sim3_alignment_removes_scale_difference(self) -> None:
+        timestamps = np.array([0.0, 1.0, 2.0, 3.0])
+        ref_positions = np.array(
+            [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
+            dtype=float,
+        )
+        est_positions = ref_positions * 2.0  # scale factor of 2
+        quats = np.array([[1, 0, 0, 0]] * 4, dtype=float)
+        traj_ref = PoseTrajectory3D(
+            positions_xyz=ref_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        traj_est = PoseTrajectory3D(
+            positions_xyz=est_positions,
+            orientations_quat_wxyz=quats,
+            timestamps=timestamps,
+        )
+        rmse = compute_ate_rmse(traj_ref, traj_est, "sim3")
+        assert rmse < 1e-6

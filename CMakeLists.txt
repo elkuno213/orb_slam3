@@ -68,6 +68,8 @@ add_library(${PROJECT_NAME} SHARED
   src/Common/KITTI.cc
   src/Common/TUM.cc
   src/Common/TUMVI.cc
+  src/Common/DatasetRunner.cc
+  src/Common/DatasetRunners.cc
   include/System.h
   include/Tracking.h
   include/LocalMapping.h
@@ -104,6 +106,8 @@ add_library(${PROJECT_NAME} SHARED
   include/Common/KITTI.h
   include/Common/TUM.h
   include/Common/TUMVI.h
+  include/Common/DatasetRunner.h
+  include/Common/DatasetRunners.h
 )
 
 add_library(orb_slam3::orb_slam3 ALIAS ${PROJECT_NAME})
@@ -183,6 +187,13 @@ install(
 )
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Unified offline binary #
+
+add_executable(orb_slam3_offline src/orb_slam3_offline.cc)
+target_link_libraries(orb_slam3_offline PRIVATE orb_slam3::orb_slam3)
+install(TARGETS orb_slam3_offline DESTINATION "${CMAKE_INSTALL_BINDIR}")
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
 # Tests #
 
 include(CTest)
@@ -195,6 +206,7 @@ if(BUILD_TESTING)
     test/MapDrawer_test.cc
     test/Viewer_test.cc
     test/Tracking_test.cc
+    test/DatasetRunner_test.cc
   )
 
   foreach(TEST_FILE ${TEST_FILES})
@@ -222,56 +234,28 @@ function(add_orb_slam3_example target_name source_file output_dir)
   install(TARGETS ${target_name} DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endfunction()
 
-# RGB-D
-add_orb_slam3_example(rgbd_tum Examples/RGB-D/rgbd_tum.cc RGB-D)
+option(BUILD_REALSENSE_EXAMPLES "Build RealSense live-sensor example binaries" ON)
 
-if(realsense2_FOUND)
+if(BUILD_REALSENSE_EXAMPLES AND realsense2_FOUND)
+  # RGB-D
   add_orb_slam3_example(rgbd_realsense_D435i Examples/RGB-D/rgbd_realsense_D435i.cc RGB-D)
-endif()
 
-# RGB-D Inertial
-if(realsense2_FOUND)
+  # RGB-D Inertial
   add_orb_slam3_example(
     rgbd_inertial_realsense_D435i
     Examples/RGB-D-Inertial/rgbd_inertial_realsense_D435i.cc
     RGB-D-Inertial
   )
-endif()
 
-# Stereo
-add_orb_slam3_example(stereo_kitti  Examples/Stereo/stereo_kitti.cc  Stereo)
-add_orb_slam3_example(stereo_euroc  Examples/Stereo/stereo_euroc.cc  Stereo)
-add_orb_slam3_example(stereo_tum_vi Examples/Stereo/stereo_tum_vi.cc Stereo)
-
-if(realsense2_FOUND)
+  # Stereo
   add_orb_slam3_example(stereo_realsense_t265  Examples/Stereo/stereo_realsense_t265.cc  Stereo)
   add_orb_slam3_example(stereo_realsense_D435i Examples/Stereo/stereo_realsense_D435i.cc Stereo)
-endif()
 
-# Monocular
-add_orb_slam3_example(mono_tum    Examples/Monocular/mono_tum.cc    Monocular)
-add_orb_slam3_example(mono_kitti  Examples/Monocular/mono_kitti.cc  Monocular)
-add_orb_slam3_example(mono_euroc  Examples/Monocular/mono_euroc.cc  Monocular)
-add_orb_slam3_example(mono_tum_vi Examples/Monocular/mono_tum_vi.cc Monocular)
-
-if(realsense2_FOUND)
+  # Monocular
   add_orb_slam3_example(mono_realsense_t265  Examples/Monocular/mono_realsense_t265.cc  Monocular)
   add_orb_slam3_example(mono_realsense_D435i Examples/Monocular/mono_realsense_D435i.cc Monocular)
-endif()
 
-# Monocular Inertial
-add_orb_slam3_example(
-  mono_inertial_euroc
-  Examples/Monocular-Inertial/mono_inertial_euroc.cc
-  Monocular-Inertial
-)
-add_orb_slam3_example(
-  mono_inertial_tum_vi
-  Examples/Monocular-Inertial/mono_inertial_tum_vi.cc
-  Monocular-Inertial
-)
-
-if(realsense2_FOUND)
+  # Monocular Inertial
   add_orb_slam3_example(
     mono_inertial_realsense_t265
     Examples/Monocular-Inertial/mono_inertial_realsense_t265.cc
@@ -282,21 +266,8 @@ if(realsense2_FOUND)
     Examples/Monocular-Inertial/mono_inertial_realsense_D435i.cc
     Monocular-Inertial
   )
-endif()
 
-# Stereo Inertial
-add_orb_slam3_example(
-  stereo_inertial_euroc
-  Examples/Stereo-Inertial/stereo_inertial_euroc.cc
-  Stereo-Inertial
-)
-add_orb_slam3_example(
-  stereo_inertial_tum_vi
-  Examples/Stereo-Inertial/stereo_inertial_tum_vi.cc
-  Stereo-Inertial
-)
-
-if(realsense2_FOUND)
+  # Stereo Inertial
   add_orb_slam3_example(
     stereo_inertial_realsense_t265
     Examples/Stereo-Inertial/stereo_inertial_realsense_t265.cc
@@ -307,10 +278,8 @@ if(realsense2_FOUND)
     Examples/Stereo-Inertial/stereo_inertial_realsense_D435i.cc
     Stereo-Inertial
   )
-endif()
 
-# Calibration
-if(realsense2_FOUND)
+  # Calibration
   add_orb_slam3_example(
     recorder_realsense_D435i
     Examples/Calibration/recorder_realsense_D435i.cc

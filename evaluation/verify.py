@@ -33,6 +33,7 @@ from evo.core import metrics, sync
 from evo.core.metrics import PoseRelation, StatisticsType
 from evo.core.trajectory import PoseTrajectory3D
 from evo.tools import file_interface
+from evo.tools.file_interface import FileInterfaceException
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,22 @@ _EUROC_V1_01: Final[str] = "/datasets/euroc-mav/V1_01_easy"
 _EUROC_V1_02: Final[str] = "/datasets/euroc-mav/V1_02_medium"
 _EUROC_V1_01_GT: Final[str] = "euroc-mav/V1_01_easy/mav0/state_groundtruth_estimate0/data.csv"
 _EUROC_V1_02_GT: Final[str] = "euroc-mav/V1_02_medium/mav0/state_groundtruth_estimate0/data.csv"
+
+# Mapping from test name to (dataset, sensor, inertial) for the unified binary.
+_UNIFIED_MAPPING: Final[dict[str, tuple[str, str, bool]]] = {
+    "rgbd_tum_fr1_room": ("tum", "rgbd", False),
+    "rgbd_tum_fr2_pioneer_slam": ("tum", "rgbd", False),
+    "mono_tum_fr1_room": ("tum", "mono", False),
+    "mono_euroc_v1_01": ("euroc", "mono", False),
+    "mono_inertial_tum_vi_corridor1": ("tumvi", "mono", True),
+    "mono_inertial_euroc_v1_01": ("euroc", "mono", True),
+    "stereo_euroc_v1_01": ("euroc", "stereo", False),
+    "stereo_euroc_v1_02": ("euroc", "stereo", False),
+    "stereo_inertial_euroc_v1_01": ("euroc", "stereo", True),
+    "stereo_inertial_euroc_v1_02": ("euroc", "stereo", True),
+}
+
+UNIFIED_BINARY: Final[str] = "orb_slam3_offline"
 
 TEST_CONFIGS: Final[dict[str, TestConfig]] = {
     # ── RGB-D TUM (2 tests, different sequences) ─────────────────────────────
@@ -477,10 +494,48 @@ def run_test(config: TestConfig, num_runs: int) -> list[float]:
                 RUN_TIMEOUT_SECONDS,
             )
             results.append(float("nan"))
-        except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as exc:
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            FileInterfaceException,
+            ValueError,
+        ) as exc:
             logger.error("Test '%s' run %d failed: %s", config.name, i + 1, exc)
             results.append(float("nan"))
     return results
+
+
+def to_unified(config: TestConfig) -> TestConfig:
+    """Transform a TestConfig to use the unified orb_slam3_offline binary.
+
+    Replaces the binary name and prepends --dataset/--sensor/--inertial flags
+    to command_args, keeping everything else identical so test names match the
+    baseline.
+
+    Args:
+        config: Original test configuration using a legacy binary.
+
+    Returns:
+        New TestConfig targeting the unified binary.
+
+    Raises:
+        KeyError: If the test name has no unified mapping.
+    """
+    dataset, sensor, inertial = _UNIFIED_MAPPING[config.name]
+    extra_args = ["--dataset", dataset, "--sensor", sensor]
+    if inertial:
+        extra_args.append("--inertial")
+    return TestConfig(
+        name=config.name,
+        binary=UNIFIED_BINARY,
+        output_format=config.output_format,
+        gt_path=config.gt_path,
+        gt_format=config.gt_format,
+        alignment=config.alignment,
+        settings_file=config.settings_file,
+        command_args=extra_args + list(config.command_args),
+        trajectory_filename=config.trajectory_filename,
+    )
 
 
 def select_tests(test_names: list[str] | None) -> list[TestConfig]:
@@ -521,6 +576,7 @@ def mode_baseline(
     baseline_file: Path,
     output_file: Path,
     threshold_factor: float,
+    use_unified: bool = False,
 ) -> int:
     """Run baseline mode: execute tests and save median results.
 
@@ -530,11 +586,14 @@ def mode_baseline(
         baseline_file: Path to save/update baseline JSON.
         output_file: Path to save detailed output JSON.
         threshold_factor: Multiplier for median to set threshold.
+        use_unified: If True, use the unified orb_slam3_offline binary.
 
     Returns:
         Exit code (0 for success, 1 for any failure).
     """
     configs = select_tests(test_names)
+    if use_unified:
+        configs = [to_unified(c) for c in configs]
     git_commit = get_git_commit()
     all_pass = True
     test_results: dict[str, dict] = {}
@@ -596,6 +655,7 @@ def mode_verify(
     baseline_file: Path,
     output_file: Path,
     threshold_factor: float,
+    use_unified: bool = False,
 ) -> int:
     """Run verify mode: execute tests and compare against baseline.
 
@@ -605,6 +665,7 @@ def mode_verify(
         baseline_file: Path to read baseline JSON from.
         output_file: Path to save detailed output JSON.
         threshold_factor: Multiplier for baseline median to set threshold.
+        use_unified: If True, use the unified orb_slam3_offline binary.
 
     Returns:
         Exit code (0 for all pass, 1 for any failure).
@@ -620,6 +681,8 @@ def mode_verify(
 
     baseline_tests = baseline.get("tests", {})
     configs = select_tests(test_names)
+    if use_unified:
+        configs = [to_unified(c) for c in configs]
     git_commit = get_git_commit()
     all_pass = True
     test_results: dict[str, dict] = {}
@@ -836,6 +899,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_THRESHOLD_FACTOR,
         help=f"Threshold multiplier for median (default: {DEFAULT_THRESHOLD_FACTOR}).",
     )
+    baseline_parser.add_argument(
+        "--use-unified",
+        action="store_true",
+        default=False,
+        help="Use the unified orb_slam3_offline binary instead of legacy binaries.",
+    )
 
     # -- verify subcommand --
     verify_parser = subparsers.add_parser(
@@ -873,6 +942,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_THRESHOLD_FACTOR,
         help=f"Threshold multiplier for baseline median (default: {DEFAULT_THRESHOLD_FACTOR}).",
     )
+    verify_parser.add_argument(
+        "--use-unified",
+        action="store_true",
+        default=False,
+        help="Use the unified orb_slam3_offline binary instead of legacy binaries.",
+    )
 
     return parser
 
@@ -899,6 +974,7 @@ def main() -> int:
             baseline_file=args.baseline_file,
             output_file=args.output_file,
             threshold_factor=args.threshold_factor,
+            use_unified=args.use_unified,
         )
     if args.mode == "verify":
         return mode_verify(
@@ -907,6 +983,7 @@ def main() -> int:
             baseline_file=args.baseline_file,
             output_file=args.output_file,
             threshold_factor=args.threshold_factor,
+            use_unified=args.use_unified,
         )
 
     parser.print_help()

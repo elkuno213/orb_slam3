@@ -19,6 +19,7 @@
 
 #include "System.h"
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -178,7 +179,7 @@ System::System(
     // unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
     // _logger->info("Binary file read in {} ms", msElapsed);
 
-    // usleep(10*1000*1000);
+    // std::this_thread::sleep_for(std::chrono::microseconds(10*1000*1000));
   }
 
   if (mSensor == IMU_STEREO || mSensor == IMU_MONOCULAR || mSensor == IMU_RGBD) {
@@ -253,7 +254,7 @@ System::System(
   mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
-  // usleep(10*1000*1000);
+  // std::this_thread::sleep_for(std::chrono::microseconds(10*1000*1000));
 
   // Initialize the Viewer thread and launch
   if (bUseViewer) {
@@ -308,7 +309,7 @@ Sophus::SE3f System::TrackStereo(
       _logger->debug("Requesting local mapper to stop...");
       mpLocalMapper->RequestStop();
       while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
       }
 
       _logger->debug("Local mapper stopped. Switching to localization-only mode");
@@ -394,7 +395,7 @@ Sophus::SE3f System::TrackRGBD(
       _logger->debug("Requesting local mapper to stop...");
       mpLocalMapper->RequestStop();
       while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
       }
 
       _logger->debug("Local mapper stopped. Switching to localization-only mode");
@@ -485,7 +486,7 @@ Sophus::SE3f System::TrackMonocular(
       _logger->debug("Requesting local mapper to stop...");
       mpLocalMapper->RequestStop();
       while (!mpLocalMapper->isStopped()) {
-        usleep(1000);
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
       }
 
       _logger->debug("Local mapper stopped. Switching to localization-only mode");
@@ -587,7 +588,7 @@ void System::Shutdown() {
   {
       mpViewer->RequestFinish();
       while(!mpViewer->isFinished())
-          usleep(5000);
+          std::this_thread::sleep_for(std::chrono::microseconds(5000));
   }*/
 
   // Wait until all thread have effectively stopped
@@ -602,7 +603,7 @@ void System::Shutdown() {
       _logger->info("mpLoopCloser is running GBA, break anyway...");
       break;
   }*/
-  /*usleep(5000);
+  /*std::this_thread::sleep_for(std::chrono::microseconds(5000));
 }*/
 
   if (!mStrSaveAtlasToFile.empty()) {

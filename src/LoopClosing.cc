@@ -18,6 +18,8 @@
  */
 
 #include "LoopClosing.h"
+#include <chrono>
+#include <thread>
 #include "Atlas.h"
 #include "Converter.h"
 #include "G2oTypes.h"
@@ -307,7 +309,7 @@ void LoopClosing::Run() {
       break;
     }
 
-    usleep(5000);
+    std::this_thread::sleep_for(std::chrono::microseconds(5000));
   }
 
   SetFinish();
@@ -1085,7 +1087,7 @@ void LoopClosing::CorrectLoop() {
 
   // Wait until Local Mapping has effectively stopped
   while (!mpLocalMapper->isStopped()) {
-    usleep(1000);
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
   }
   _logger->info("Local mapping stopped");
 
@@ -1389,7 +1391,7 @@ void LoopClosing::MergeLocal() {
   mpLocalMapper->RequestStop();
   // Wait until Local Mapping has effectively stopped
   while (!mpLocalMapper->isStopped()) {
-    usleep(1000);
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
   }
 
   mpLocalMapper->EmptyQueue();
@@ -1828,7 +1830,7 @@ void LoopClosing::MergeLocal() {
     mpLocalMapper->RequestStop();
     // Wait until Local Mapping has effectively stopped
     while (!mpLocalMapper->isStopped()) {
-      usleep(1000);
+      std::this_thread::sleep_for(std::chrono::microseconds(1000));
     }
     _logger->info("MergeLocal: local mapping stopped");
 
@@ -1949,7 +1951,7 @@ void LoopClosing::MergeLocal2() {
   mpLocalMapper->RequestStop();
   // Wait until Local Mapping has effectively stopped
   while (!mpLocalMapper->isStopped()) {
-    usleep(1000);
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
   }
 
   Map* pCurrentMap = mpCurrentKF->GetMap();
@@ -2254,7 +2256,7 @@ void LoopClosing::RequestReset() {
         break;
       }
     }
-    usleep(5000);
+    std::this_thread::sleep_for(std::chrono::microseconds(5000));
   }
   _logger->info("Reset completed successfully");
 }
@@ -2273,7 +2275,7 @@ void LoopClosing::RequestResetActiveMap(Map* pMap) {
         break;
       }
     }
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
   _logger->info("Active map reset completed successfully");
 }
@@ -2358,7 +2360,7 @@ void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoop
       // Wait until Local Mapping has effectively stopped
 
       while (!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished()) {
-        usleep(1000);
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
       }
 
       // Get Map Mutex

@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ATLAS_H
-#define ATLAS_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -166,4 +165,3 @@ protected:
 
 } // namespace ORB_SLAM3
 
-#endif // ATLAS_H

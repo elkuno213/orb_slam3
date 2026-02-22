@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -255,4 +254,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // SYSTEM_H

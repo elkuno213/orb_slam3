@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MAP_H
-#define MAP_H
+#pragma once
 
 #include <list>
 #include <map>
@@ -217,4 +216,3 @@ protected:
 
 } // namespace ORB_SLAM3
 
-#endif // MAP_H

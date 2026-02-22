@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <string>
 
@@ -45,4 +44,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // CONFIG_H

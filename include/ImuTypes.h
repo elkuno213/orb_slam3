@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef IMUTYPES_H
-#define IMUTYPES_H
+#pragma once
 
 #include <mutex>
 #include <vector>
@@ -262,4 +261,3 @@ Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f& R);
 
 } // namespace ORB_SLAM3
 
-#endif // IMUTYPES_H

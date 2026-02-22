@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef G2OTYPES_H
-#define G2OTYPES_H
+#pragma once
 
 #include <fstream>
 #include <vector>
@@ -911,4 +910,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // G2OTYPES_H

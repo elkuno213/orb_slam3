@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SERIALIZATION_UTILS_H
-#define SERIALIZATION_UTILS_H
+#pragma once
 
 #include <vector>
 #include <Eigen/Core>
@@ -158,4 +157,3 @@ void serializeVectorKeyPoints(
 
 } // namespace ORB_SLAM3
 
-#endif // SERIALIZATION_UTILS_H

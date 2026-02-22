@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TwoViewReconstruction_H
-#define TwoViewReconstruction_H
+#pragma once
 
 #include <utility>
 #include <vector>
@@ -140,4 +139,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // TwoViewReconstruction_H

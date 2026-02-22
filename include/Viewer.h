@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef VIEWER_H
-#define VIEWER_H
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -103,4 +102,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // VIEWER_H

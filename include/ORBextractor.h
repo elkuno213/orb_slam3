@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBEXTRACTOR_H
-#define ORBEXTRACTOR_H
+#pragma once
 
 #include <list>
 #include <vector>
@@ -120,4 +119,3 @@ protected:
 
 } // namespace ORB_SLAM3
 
-#endif

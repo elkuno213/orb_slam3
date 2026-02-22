@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MAPDRAWER_H
-#define MAPDRAWER_H
+#pragma once
 
 #include <memory>
 #include <mutex>
@@ -82,4 +81,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // MAPDRAWER_H

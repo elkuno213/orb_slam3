@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ORB_SLAM3_OPTIMIZABLETYPES_H
-#define ORB_SLAM3_OPTIMIZABLETYPES_H
+#pragma once
 
 #include <fstream>
 #include <Eigen/Core>
@@ -215,4 +214,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // ORB_SLAM3_OPTIMIZABLETYPES_H

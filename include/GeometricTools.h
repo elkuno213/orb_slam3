@@ -19,9 +19,11 @@
 
 #pragma once
 
+#include <sstream>
 #include <Eigen/Core>
 #include <opencv2/core.hpp>
 #include <sophus/se3.hpp>
+#include <spdlog/spdlog.h>
 
 namespace ORB_SLAM3 {
 
@@ -47,14 +49,15 @@ public:
     const float epsilon = 1e-3;
     // std::cout << cvMat.cols - cols << cvMat.rows - rows << std::endl;
     if (rows != cvMat.rows || cols != cvMat.cols) {
-      std::cout << "wrong cvmat size\n";
+      spdlog::warn("CheckMatrices: wrong cvmat size");
       return false;
     }
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
         if ((cvMat.at<float>(i, j) > (eigMat(i, j) + epsilon)) || (cvMat.at<float>(i, j) < (eigMat(i, j) - epsilon))) {
-          std::cout << "cv mat:\n" << cvMat << std::endl;
-          std::cout << "eig mat:\n" << eigMat << std::endl;
+          std::ostringstream oss;
+          oss << "CheckMatrices mismatch:\ncv mat:\n" << cvMat << "\neig mat:\n" << eigMat;
+          spdlog::warn("{}", oss.str());
           return false;
         }
       }
@@ -70,8 +73,9 @@ public:
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
         if ((eigMat1(i, j) > (eigMat2(i, j) + epsilon)) || (eigMat1(i, j) < (eigMat2(i, j) - epsilon))) {
-          std::cout << "eig mat 1:\n" << eigMat1 << std::endl;
-          std::cout << "eig mat 2:\n" << eigMat2 << std::endl;
+          std::ostringstream oss;
+          oss << "CheckMatrices mismatch:\neig mat 1:\n" << eigMat1 << "\neig mat 2:\n" << eigMat2;
+          spdlog::warn("{}", oss.str());
           return false;
         }
       }

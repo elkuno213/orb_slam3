@@ -3915,7 +3915,7 @@ bool Tracking::Stop() {
   std::unique_lock<std::mutex> lock(mMutexStop);
   if (mbStopRequested && !mbNotStop) {
     mbStopped = true;
-    std::cout << "Tracking STOP" << std::endl;
+    _logger->info("Tracking STOP");
     return true;
   }
 

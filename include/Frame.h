@@ -32,8 +32,8 @@
 #include "ORBVocabulary.h"
 
 namespace ORB_SLAM3 {
-#define FRAME_GRID_ROWS 48
-#define FRAME_GRID_COLS 64
+inline constexpr int kFrameGridRows = 48;
+inline constexpr int kFrameGridCols = 64;
 
 class ConstraintPoseImu;
 class GeometricCamera;
@@ -286,7 +286,7 @@ public:
   // MapPoints.
   static float             mfGridElementWidthInv;
   static float             mfGridElementHeightInv;
-  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+  std::vector<std::size_t> mGrid[kFrameGridCols][kFrameGridRows];
 
   IMU::Bias mPredBias;
 
@@ -377,7 +377,7 @@ public:
   std::vector<Eigen::Vector3f> mvStereo3Dpoints;
 
   // Grid for the right image
-  std::vector<std::size_t> mGridRight[FRAME_GRID_COLS][FRAME_GRID_ROWS];
+  std::vector<std::size_t> mGridRight[kFrameGridCols][kFrameGridRows];
 
   Frame(
     const cv::Mat&    imLeft,

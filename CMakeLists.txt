@@ -194,6 +194,15 @@ target_link_libraries(orb_slam3_offline PRIVATE orb_slam3::orb_slam3)
 install(TARGETS orb_slam3_offline DESTINATION "${CMAKE_INSTALL_BINDIR}")
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Unified RealSense binary #
+
+if(realsense2_FOUND)
+  add_executable(orb_slam3_realsense src/orb_slam3_realsense.cc)
+  target_link_libraries(orb_slam3_realsense PRIVATE orb_slam3::orb_slam3)
+  install(TARGETS orb_slam3_realsense DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
 # Tests #
 
 include(CTest)
@@ -234,7 +243,7 @@ function(add_orb_slam3_example target_name source_file output_dir)
   install(TARGETS ${target_name} DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endfunction()
 
-option(BUILD_REALSENSE_EXAMPLES "Build RealSense live-sensor example binaries" ON)
+option(BUILD_REALSENSE_EXAMPLES "Build legacy RealSense live-sensor example binaries" OFF)
 
 if(BUILD_REALSENSE_EXAMPLES AND realsense2_FOUND)
   # RGB-D

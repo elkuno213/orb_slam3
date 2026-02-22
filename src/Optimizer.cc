@@ -157,7 +157,7 @@ void Optimizer::BundleAdjustment(
       if (pKF->isBad() || pKF->mnId > maxKFid) {
         continue;
       }
-      if (optimizer.vertex(id) == NULL || optimizer.vertex(pKF->mnId) == NULL) {
+      if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKF->mnId) == nullptr) {
         continue;
       }
       nEdges++;
@@ -2308,11 +2308,11 @@ int Optimizer::OptimizeSim3(
 
     if (e12->chi2() > th2 || e21->chi2() > th2) {
       std::size_t idx = vnIndexEdge[i];
-      vpMatches1[idx] = static_cast<MapPoint*>(NULL);
+      vpMatches1[idx] = nullptr;
       optimizer.removeEdge(e12);
       optimizer.removeEdge(e21);
-      vpEdges12[i] = static_cast<ORB_SLAM3::EdgeSim3ProjectXYZ*>(NULL);
-      vpEdges21[i] = static_cast<ORB_SLAM3::EdgeInverseSim3ProjectXYZ*>(NULL);
+      vpEdges12[i] = nullptr;
+      vpEdges21[i] = nullptr;
       nBad++;
 
       if (!vbIsInKF2[i]) {
@@ -2355,7 +2355,7 @@ int Optimizer::OptimizeSim3(
 
     if (e12->chi2() > th2 || e21->chi2() > th2) {
       std::size_t idx = vnIndexEdge[i];
-      vpMatches1[idx] = static_cast<MapPoint*>(NULL);
+      vpMatches1[idx] = nullptr;
     } else {
       nIn++;
     }
@@ -2581,9 +2581,9 @@ void Optimizer::LocalInertialBA(
   }
 
   // Create intertial constraints
-  std::vector<EdgeInertial*> vei(N, (EdgeInertial*)NULL);
-  std::vector<EdgeGyroRW*>   vegr(N, (EdgeGyroRW*)NULL);
-  std::vector<EdgeAccRW*>    vear(N, (EdgeAccRW*)NULL);
+  std::vector<EdgeInertial*> vei(N, nullptr);
+  std::vector<EdgeGyroRW*>   vegr(N, nullptr);
+  std::vector<EdgeAccRW*>    vear(N, nullptr);
 
   for (int i = 0; i < N; i++) {
     KeyFrame* pKFi = vpOptimizableKFs[i];
@@ -4146,9 +4146,9 @@ void Optimizer::MergeInertialBA(
   }
 
   // Create intertial constraints
-  std::vector<EdgeInertial*> vei(N, (EdgeInertial*)NULL);
-  std::vector<EdgeGyroRW*>   vegr(N, (EdgeGyroRW*)NULL);
-  std::vector<EdgeAccRW*>    vear(N, (EdgeAccRW*)NULL);
+  std::vector<EdgeInertial*> vei(N, nullptr);
+  std::vector<EdgeGyroRW*>   vegr(N, nullptr);
+  std::vector<EdgeAccRW*>    vear(N, nullptr);
   for (int i = 0; i < N; i++) {
     KeyFrame* pKFi = vpOptimizableKFs[i];
 
@@ -4273,7 +4273,7 @@ void Optimizer::MergeInertialBA(
         continue;
       }
 
-      if (optimizer.vertex(id) == NULL || optimizer.vertex(pKFi->mnId) == NULL) {
+      if (optimizer.vertex(id) == nullptr || optimizer.vertex(pKFi->mnId) == nullptr) {
         continue;
       }
 
@@ -5230,7 +5230,7 @@ int Optimizer::PoseInertialOptimizationLastFrame(Frame* pFrame, bool bRecInit) {
     H.block<15, 15>(15, 15)
   );
   delete pFp->mpcpi;
-  pFp->mpcpi = NULL;
+  pFp->mpcpi = nullptr;
 
   return nInitialCorrespondences - nBad;
 }
@@ -5369,7 +5369,7 @@ void Optimizer::OptimizeEssentialGraph4DoF(
     }
 
     // 1.1.0 Spanning tree edge
-    KeyFrame* pParentKF = static_cast<KeyFrame*>(NULL);
+    KeyFrame* pParentKF = nullptr;
     if (pParentKF) {
       int nIDj = pParentKF->mnId;
 

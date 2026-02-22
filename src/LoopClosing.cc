@@ -47,12 +47,12 @@ LoopClosing::LoopClosing(
   , mpAtlas(pAtlas)
   , mpKeyFrameDB(pDB)
   , mpORBVocabulary(pVoc)
-  , mpMatchedKF(NULL)
+  , mpMatchedKF(nullptr)
   , mLastLoopKFid(0)
   , mbRunningGBA(false)
   , mbFinishedGBA(true)
   , mbStopGBA(false)
-  , mpThreadGBA(NULL)
+  , mpThreadGBA(nullptr)
   , mbFixScale(bFixScale)
   , mnFullBAIdx(0)
   , mnLoopNumCoincidences(0)
@@ -64,7 +64,7 @@ LoopClosing::LoopClosing(
   , mbActiveLC(bActiveLC)
   , _logger(logging::CreateModuleLogger("LoopClosing")) {
   mnCovisibilityConsistencyTh = 3;
-  mpLastCurrentKF             = static_cast<KeyFrame*>(NULL);
+  mpLastCurrentKF             = nullptr;
 
 #ifdef REGISTER_TIMES
   vdDataQuery_ms.clear();
@@ -611,7 +611,7 @@ bool LoopClosing::DetectAndReffineSim3FromLastKF(
       g2o::Sim3 gScw_estimation(gScw.rotation(), gScw.translation(), 1.0);
 
       std::vector<MapPoint*> vpMatchedMP;
-      vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
+      vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), nullptr);
 
       nNumProjMatches = FindMatchesByProjection(
         pCurrentKF,
@@ -703,11 +703,11 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
 
     std::vector<MapPoint*> vpMatchedPoints = std::vector<MapPoint*>(
       mpCurrentKF->GetMapPointMatches().size(),
-      static_cast<MapPoint*>(NULL)
+      nullptr
     );
     std::vector<KeyFrame*> vpKeyFrameMatchedMP = std::vector<KeyFrame*>(
       mpCurrentKF->GetMapPointMatches().size(),
-      static_cast<KeyFrame*>(NULL)
+      nullptr
     );
 
     int nIndexMostBoWMatchesKF = 0;
@@ -814,9 +814,9 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
         Sophus::Sim3f mScw = Converter::toSophus(gScw);
 
         std::vector<MapPoint*> vpMatchedMP;
-        vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
+        vpMatchedMP.resize(mpCurrentKF->GetMapPointMatches().size(), nullptr);
         std::vector<KeyFrame*> vpMatchedKF;
-        vpMatchedKF.resize(mpCurrentKF->GetMapPointMatches().size(), static_cast<KeyFrame*>(NULL));
+        vpMatchedKF.resize(mpCurrentKF->GetMapPointMatches().size(), nullptr);
         int numProjMatches = matcher.SearchByProjection(
           mpCurrentKF,
           mScw,
@@ -865,7 +865,7 @@ bool LoopClosing::DetectCommonRegionsFromBoW(
             std::vector<MapPoint*> vpMatchedMP;
             vpMatchedMP.resize(
               mpCurrentKF->GetMapPointMatches().size(),
-              static_cast<MapPoint*>(NULL)
+              nullptr
             );
             int numProjOptMatches
               = matcher.SearchByProjection(mpCurrentKF, mScw, vpMapPoints, vpMatchedMP, 5, 1.0);
@@ -1052,7 +1052,7 @@ int LoopClosing::FindMatchesByProjection(
   Sophus::Sim3f mScw = Converter::toSophus(g2oScw);
   ORBmatcher    matcher(0.9, true);
 
-  vpMatchedMapPoints.resize(pCurrentKF->GetMapPointMatches().size(), static_cast<MapPoint*>(NULL));
+  vpMatchedMapPoints.resize(pCurrentKF->GetMapPointMatches().size(), nullptr);
   int num_matches
     = matcher.SearchByProjection(pCurrentKF, mScw, vpMapPoints, vpMatchedMapPoints, 3, 1.5);
 
@@ -2190,7 +2190,7 @@ void LoopClosing::SearchAndFuse(
     g2o::Sim3     g2oScw = mit->second;
     Sophus::Sim3f Scw    = Converter::toSophus(g2oScw);
 
-    std::vector<MapPoint*> vpReplacePoints(vpMapPoints.size(), static_cast<MapPoint*>(NULL));
+    std::vector<MapPoint*> vpReplacePoints(vpMapPoints.size(), nullptr);
     int                    numFused = matcher.Fuse(pKFi, Scw, vpMapPoints, 4, vpReplacePoints);
 
     // Get Map Mutex
@@ -2225,7 +2225,7 @@ void LoopClosing::SearchAndFuse(
     // TODO(VuHoi): assert Scw.rotationMatrix() = Tcw.rotationMatrix()
     //              Scw.translation()    = Tcw.translation()
     //              Scw.scale()          = 1
-    std::vector<MapPoint*> vpReplacePoints(vpMapPoints.size(), static_cast<MapPoint*>(NULL));
+    std::vector<MapPoint*> vpReplacePoints(vpMapPoints.size(), nullptr);
     matcher.Fuse(pKF, Scw, vpMapPoints, 4, vpReplacePoints);
 
     // Get Map Mutex

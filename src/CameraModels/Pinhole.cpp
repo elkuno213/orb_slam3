@@ -76,7 +76,7 @@ Eigen::Vector2f Pinhole::project(const Eigen::Vector3f& v3D) {
 }
 
 Eigen::Vector2f Pinhole::projectMat(const cv::Point3f& p3D) {
-  cv::Point2f point = this->project(p3D);
+  cv::Point2f point = project(p3D);
   return Eigen::Vector2f(point.x, point.y);
 }
 
@@ -121,7 +121,7 @@ bool Pinhole::ReconstructWithTwoViews(
   std::vector<bool>&               vbTriangulated
 ) {
   if (!tvr) {
-    Eigen::Matrix3f K = this->toK_();
+    Eigen::Matrix3f K = toK_();
     tvr               = new TwoViewReconstruction(K);
   }
 
@@ -151,7 +151,7 @@ bool Pinhole::epipolarConstrain(
 ) {
   // Compute Fundamental Matrix
   Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
-  Eigen::Matrix3f K1   = this->toK_();
+  Eigen::Matrix3f K1   = toK_();
   Eigen::Matrix3f K2   = pCamera2->toK_();
   Eigen::Matrix3f F12  = K1.transpose().inverse() * t12x * R12 * K2.inverse();
 

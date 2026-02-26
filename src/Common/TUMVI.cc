@@ -29,17 +29,24 @@ void LoadMonocularImages(
   while (!fTimes.eof()) {
     std::string s;
     std::getline(fTimes, s);
+    // TUM-VI CSVs may have Windows line endings (\r\n) depending on the download tool.
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
+    }
 
     if (!s.empty()) {
       if (s[0] == '#') {
         continue;
       }
 
-      int         pos  = s.find(' ');
-      std::string item = s.substr(0, pos);
+      // TUM-VI CSV format: "timestamp_ns,image_filename" (comma-separated, not space).
+      // Old code used s.find(' ') which failed on standard CSV files.
+      std::size_t pos = s.find(',');
+      std::string ts  = s.substr(0, pos);
+      std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
 
-      vstrImages.push_back(strImagePath + "/" + item + ".png");
-      double t = std::stod(item);
+      vstrImages.push_back(strImagePath + "/" + img);
+      double t = std::stod(ts);
       vTimeStamps.push_back(t * 1e-9);
     }
   }
@@ -61,19 +68,25 @@ void LoadStereoImages(
   while (!fTimes.eof()) {
     std::string s;
     std::getline(fTimes, s);
+    // Strip Windows \r (see LoadMonocularImages comment).
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
+    }
 
     if (!s.empty()) {
       if (s[0] == '#') {
         continue;
       }
 
-      int         pos  = s.find(' ');
-      std::string item = s.substr(0, pos);
+      // CSV column parsing (see LoadMonocularImages comment).
+      std::size_t pos = s.find(',');
+      std::string ts  = s.substr(0, pos);
+      std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
 
-      vstrImageLeft.push_back(strPathLeft + "/" + item + ".png");
-      vstrImageRight.push_back(strPathRight + "/" + item + ".png");
+      vstrImageLeft.push_back(strPathLeft + "/" + img);
+      vstrImageRight.push_back(strPathRight + "/" + img);
 
-      double t = std::stod(item);
+      double t = std::stod(ts);
       vTimeStamps.push_back(t * 1e-9);
     }
   }
@@ -94,11 +107,17 @@ void LoadIMU(
   while (!fImu.eof()) {
     std::string s;
     std::getline(fImu, s);
-    if (s[0] == '#') {
-      continue;
+    // Strip Windows \r (see LoadMonocularImages comment).
+    if (!s.empty() && s.back() == '\r') {
+      s.pop_back();
     }
 
     if (!s.empty()) {
+      if (s[0] == '#') {
+        continue;
+      }
+
+      // TUM-VI IMU CSV: "timestamp_ns,gx,gy,gz,ax,ay,az" (7 comma-separated fields).
       std::string item;
       std::size_t pos = 0;
       double      data[7];

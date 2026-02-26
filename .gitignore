@@ -1,8 +1,8 @@
 # Build
 build/
+.docker/cache/
 
 # Thirdparty: cloned inside Docker
-Thirdparty/librealsense/
 Thirdparty/Pangolin/
 Thirdparty/*/build/
 Thirdparty/*/lib/
@@ -25,6 +25,7 @@ __pycache__/
 # Tools
 .claude/
 .serena/
+.env
 
 # Data
 datasets/

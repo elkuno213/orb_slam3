@@ -4,15 +4,17 @@ This is a modernized fork of the [original ORB-SLAM3](https://github.com/UZ-SLAM
 
 ## Key Improvements (Done)
 
+- Unified `orb_slam3_offline` binary replacing 12 legacy per-sensor example binaries
+- DatasetRunner strategy classes (EuRoCRunner, TumRunner, TumViRunner) with polymorphic dataset loading
+- Real-time frame pacing for correct IMU initialization
+- `verify.py` evaluation script with baseline/verify modes and ATE RMSE regression testing
+- Multi-stage Dockerfile with parallel dependency builds and minimal runtime image
 - ORB_SLAM3 namespace wrapping across all source files
 - Optimized include directives to reduce compilation time and improve build efficiency
 - clang-format applied for consistent code formatting
 - spdlog integration for structured logging (replacing most cout/cerr)
-- Basic exception handling with try/catch patterns
-- Common/ utility extraction (EuRoC, TUM, KITTI, RealSense, TUMVI helpers)
-- Multi-stage Dockerfile with parallel dependency builds and minimal runtime image
 - C++20 standard enabled in CMake
-- GTest integration with 5 initial test files
+- GTest integration with DatasetRunner test suite
 
 ## Docker
 
@@ -45,28 +47,24 @@ docker compose build --builder orb-slam3 orb-slam3-evo
 xhost +local:docker
 docker compose run --rm orb-slam3
 
-# Example — run RGB-D on TUM fr2_large_with_loop:
-rgbd_tum \
+# Example — stereo-inertial on EuRoC MH01:
+orb_slam3_offline \
+  --dataset euroc --sensor stereo --inertial \
+  --vocabulary-file Vocabulary/ORBvoc.txt \
+  --settings-file Examples/Stereo-Inertial/EuRoC.yaml \
+  --data /datasets/euroc/MH_01_easy
+
+# Example — RGB-D on TUM fr2:
+orb_slam3_offline \
+  --dataset tum --sensor rgbd \
   --vocabulary-file Vocabulary/ORBvoc.txt \
   --settings-file Examples/RGB-D/TUM2.yaml \
-  --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
-  --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
+  --data /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop
 
 xhost -local:docker
 ```
 
-Custom dataset path: `DATASETS_DIR=/path/to/datasets docker compose run --rm orb-slam3`
-
-All example binaries support `--no-viewer` to disable the Pangolin GUI (useful for headless environments or benchmarking):
-
-```bash
-rgbd_tum \
-  --no-viewer \
-  --vocabulary-file Vocabulary/ORBvoc.txt \
-  --settings-file Examples/RGB-D/TUM2.yaml \
-  --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
-  --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
-```
+Use `--no-viewer` for headless environments or benchmarking. Use `--data` multiple times for multi-sequence runs.
 
 ### Development
 
@@ -108,7 +106,7 @@ The `orb-slam3-evo` service provides headless trajectory evaluation using the [e
 # Run a single-run baseline on one test:
 docker compose run --rm -T orb-slam3-evo \
   python3 -u evaluation/verify.py baseline \
-    --tests rgbd_tum_fr2_large_with_loop --runs 1
+    --tests rgbd_tum_fr1_room --runs 1
 
 # Verify all tests against baseline (3 runs each):
 docker compose run --rm -T orb-slam3-evo \

@@ -10,6 +10,7 @@ This is a modernized fork of the [original ORB-SLAM3](https://github.com/UZ-SLAM
 - spdlog integration for structured logging (replacing most cout/cerr)
 - Basic exception handling with try/catch patterns
 - Common/ utility extraction (EuRoC, TUM, KITTI, RealSense, TUMVI helpers)
+- Multi-stage Dockerfile with parallel dependency builds and minimal runtime image
 - C++20 standard enabled in CMake
 - GTest integration with 5 initial test files
 
@@ -17,11 +18,25 @@ This is a modernized fork of the [original ORB-SLAM3](https://github.com/UZ-SLAM
 
 **Prerequisites:** Docker Engine 20.10+, Docker Compose v2+, X11 server (for Pangolin GUI).
 
+### Setup
+
+```bash
+cp .env.example .env
+# Edit .env with your host paths (all variables are optional with sensible defaults)
+```
+
 ### Build
 
 ```bash
 docker compose build orb-slam3       # Runtime image (executables + shared libs only)
 docker compose build orb-slam3-dev   # Dev image (full build environment)
+docker compose build orb-slam3-evo   # Evaluation image (runtime + evo toolkit)
+```
+
+With a dedicated buildx builder (recommended for cache isolation):
+
+```bash
+docker compose build --builder orb-slam3 orb-slam3-evo
 ```
 
 ### Runtime
@@ -76,45 +91,36 @@ The build produces `build/compile_commands.json` for clangd/clang-tidy (visible 
 
 ### Environment Variables
 
+All variables are optional. See `.env.example` for full documentation.
+
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DISPLAY` | `:0` | X11 display for Pangolin GUI |
-| `DATASETS_DIR` | `./datasets` | Host path mounted at `/datasets` |
-| `LIBGL_ALWAYS_SOFTWARE` | `1` | Mesa software rendering (no GPU required) |
-
+| `SRC_DIR` | `.` | Host source path (build context and dev bind mount) |
+| `DATASETS_DIR` | `./datasets` | Host path mounted read-only at `/datasets` |
+| `RESULTS_DIR` | `./results` | Host path for trajectory outputs |
+| `EVALUATION_DIR` | `./evaluation` | Host path for evaluation scripts (evo container) |
 
 ### Evaluation
 
 The `orb-slam3-evo` service provides headless trajectory evaluation using the [evo](https://github.com/MichaelGrupp/evo) toolkit. No X11 server is required.
 
 ```bash
-# Build the evo image (incremental, reuses cached runtime layer):
-docker compose build orb-slam3-evo
-
 # Run a single-run baseline on one test:
-docker compose run --rm orb-slam3-evo \
+docker compose run --rm -T orb-slam3-evo \
   python3 -u evaluation/verify.py baseline \
     --tests rgbd_tum_fr2_large_with_loop --runs 1
 
-# Verify against baseline:
-docker compose run --rm orb-slam3-evo \
+# Verify all tests against baseline (3 runs each):
+docker compose run --rm -T orb-slam3-evo \
   python3 -u evaluation/verify.py verify
 
-# Run a specific binary headlessly:
-docker compose run --rm orb-slam3-evo \
-  rgbd_tum --no-viewer \
-    --vocabulary-file Vocabulary/ORBvoc.txt \
-    --settings-file Examples/RGB-D/TUM2.yaml \
-    --sequence-dir /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop \
-    --association-file Examples/RGB-D/associations/fr2_large_with_loop.txt
+# Verify specific tests:
+docker compose run --rm -T orb-slam3-evo \
+  python3 -u evaluation/verify.py verify \
+    --tests stereo_inertial_euroc_v1_01 mono_euroc_v1_01
 ```
 
-Results are written to `./results/` on the host (mounted at `/orb_slam3/results` inside the container).
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DATASETS_DIR` | `./datasets` | Host path mounted read-only at `/datasets` |
-| `PYTHONUNBUFFERED` | `1` | Flush Python output in real time |
+Results are written to `./results/` on the host (mounted at `/orb-slam3/results` inside the container).
 
 ## Modernization Roadmap
 

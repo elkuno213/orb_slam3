@@ -1,12 +1,14 @@
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Stage 1: deps — system packages and third-party library builds                                   #
+# Stage: base — system packages shared by all dependency builds                                    #
 
-FROM ubuntu:22.04 AS deps
+FROM ubuntu:24.04 AS base
 
-ENV DEBIAN_FRONTEND=noninteractive
+ARG NPROC
+ENV DEBIAN_FRONTEND=noninteractive \
+    NPROC=${NPROC:-}
 
 # System dependencies: build tools, display libs, codecs, Python, ORB-SLAM3 deps,
-# Intel RealSense build deps, and Mesa utilities (glxinfo, glxgears).
+# and Mesa utilities (glxinfo, glxgears).
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential                                          \
         ca-certificates                                          \
@@ -47,93 +49,101 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libopencv-dev                                            \
         libspdlog-dev                                            \
         libssl-dev                                               \
-        # Intel RealSense build deps                             \
-        libgtk-3-dev                                             \
-        libudev-dev                                              \
-        libusb-1.0-0-dev                                         \
         # Mesa / GLX debugging utils                             \
         libglu1-mesa-dev                                         \
         mesa-utils                                               \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /orb_slam3
+WORKDIR /orb-slam3
 
-# Intel RealSense SDK — camera interface for D435i / T265 examples.
-# Built from source with -DBUILD_WITH_DDS=OFF to avoid the fastcdr/fastrtps dependency whose Ubuntu
-# packages lack CMake exported targets.
-RUN git clone --depth 1 --branch v2.56.5 \
-        https://github.com/IntelRealSense/librealsense.git Thirdparty/librealsense
-RUN --mount=type=cache,target=/orb_slam3/Thirdparty/librealsense/build        \
-    cmake -B Thirdparty/librealsense/build -S Thirdparty/librealsense -GNinja \
-        -DCMAKE_BUILD_TYPE=Release                                            \
-        -DCMAKE_INSTALL_PREFIX=/usr/local                                     \
-        -DBUILD_EXAMPLES=OFF                                                  \
-        -DBUILD_GRAPHICAL_EXAMPLES=OFF                                        \
-        -DBUILD_TOOLS=OFF                                                     \
-        -DBUILD_UNIT_TESTS=OFF                                                \
-        -DBUILD_WITH_DDS=OFF                                                  \
-    && ninja -C Thirdparty/librealsense/build -j"$(nproc)"                    \
-    && cmake --install Thirdparty/librealsense/build
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Per-dependency build stages — independent stages that can be built in parallel.                  #
+# Each installs to /usr/local (the default prefix). The merge stage simply copies /usr/local/      #
+# from each stage — redundant base files are harmless and cmake configs need no fixup.             #
 
-# Pangolin — 3D visualization and UI framework used by ORB-SLAM3's map viewer #
+# Pangolin — 3D visualization and UI framework used by ORB-SLAM3's map viewer
+FROM base AS build-pangolin
 RUN git clone --recursive --depth 1 --branch v0.9.4 \
         https://github.com/stevenlovegrove/Pangolin.git Thirdparty/Pangolin
-RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Pangolin/build    \
-    cmake -B Thirdparty/Pangolin/build -S Thirdparty/Pangolin -GNinja \
+RUN cmake -B Thirdparty/Pangolin/build -S Thirdparty/Pangolin -GNinja \
         -DCMAKE_BUILD_TYPE=Release                                    \
         -DCMAKE_INSTALL_PREFIX=/usr/local                             \
         -DPython_EXECUTABLE="$(which python3)"                        \
         -DBUILD_TESTS=OFF                                             \
         -DBUILD_EXAMPLES=OFF                                          \
-    && ninja -C Thirdparty/Pangolin/build -j"$(nproc)"                \
+    && ninja -C Thirdparty/Pangolin/build -j"${NPROC:-$(nproc)}"      \
     && cmake --install Thirdparty/Pangolin/build
 
 # DBoW2 — bag-of-words library for visual place recognition and loop closure
+FROM base AS build-dbow2
 COPY Thirdparty/DBoW2/ Thirdparty/DBoW2/
-RUN --mount=type=cache,target=/orb_slam3/Thirdparty/DBoW2/build \
-    cmake -B Thirdparty/DBoW2/build -S Thirdparty/DBoW2 -GNinja \
+RUN cmake -B Thirdparty/DBoW2/build -S Thirdparty/DBoW2 -GNinja \
         -DCMAKE_BUILD_TYPE=Release                              \
-    && ninja -C Thirdparty/DBoW2/build -j"$(nproc)"             \
+        -DCMAKE_INSTALL_PREFIX=/usr/local                       \
+    && ninja -C Thirdparty/DBoW2/build -j"${NPROC:-$(nproc)}"   \
     && cmake --install Thirdparty/DBoW2/build
 
 # g2o — general graph optimization framework for pose-graph and bundle adjustment
+FROM base AS build-g2o
 COPY Thirdparty/g2o/ Thirdparty/g2o/
-RUN --mount=type=cache,target=/orb_slam3/Thirdparty/g2o/build \
-    cmake -B Thirdparty/g2o/build -S Thirdparty/g2o -GNinja   \
-        -DCMAKE_BUILD_TYPE=Release                            \
-    && ninja -C Thirdparty/g2o/build -j"$(nproc)"             \
+RUN cmake -B Thirdparty/g2o/build -S Thirdparty/g2o -GNinja \
+        -DCMAKE_BUILD_TYPE=Release                          \
+        -DCMAKE_INSTALL_PREFIX=/usr/local                   \
+    && ninja -C Thirdparty/g2o/build -j"${NPROC:-$(nproc)}" \
     && cmake --install Thirdparty/g2o/build
 
 # Sophus — header-only C++ Lie group library (SO3/SE3) used for rigid-body transforms
+FROM base AS build-sophus
 COPY Thirdparty/Sophus/ Thirdparty/Sophus/
-RUN --mount=type=cache,target=/orb_slam3/Thirdparty/Sophus/build  \
-    cmake -B Thirdparty/Sophus/build -S Thirdparty/Sophus -GNinja \
+RUN cmake -B Thirdparty/Sophus/build -S Thirdparty/Sophus -GNinja \
         -DCMAKE_BUILD_TYPE=Release                                \
+        -DCMAKE_INSTALL_PREFIX=/usr/local                         \
         -DBUILD_TESTS=OFF                                         \
         -DBUILD_EXAMPLES=OFF                                      \
-    && ninja -C Thirdparty/Sophus/build -j"$(nproc)"              \
+    && ninja -C Thirdparty/Sophus/build -j"${NPROC:-$(nproc)}"    \
     && cmake --install Thirdparty/Sophus/build
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Stage: deps — merge all pre-built dependencies into a single /usr/local prefix                   #
+
+FROM base AS deps
+
+COPY --from=build-pangolin     /usr/local/ /usr/local/
+COPY --from=build-dbow2        /usr/local/ /usr/local/
+COPY --from=build-g2o          /usr/local/ /usr/local/
+COPY --from=build-sophus       /usr/local/ /usr/local/
 
 # Ensure all shared libraries installed to /usr/local/lib are discoverable
 RUN ldconfig
 
 # ORB vocabulary — pre-trained visual word dictionary for DBoW2 place recognition
 COPY Vocabulary/ Vocabulary/
-WORKDIR /orb_slam3/Vocabulary
+WORKDIR /orb-slam3/Vocabulary
 RUN tar -xf ORBvoc.txt.tar.gz
-WORKDIR /orb_slam3
+WORKDIR /orb-slam3
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Stage 2: builder — compile ORB-SLAM3 against the pre-built dependencies                          #
+# Stage: dev — development environment with pre-built deps and editor/debug tooling                 #
+
+FROM deps AS dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        clangd                                                   \
+        curl                                                     \
+        wget                                                     \
+    && rm -rf /var/lib/apt/lists/*
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Stage: builder — compile ORB-SLAM3 against the pre-built dependencies                            #
 
 FROM deps AS builder
 COPY . .
-RUN --mount=type=cache,target=/orb_slam3/build \
-    cmake -B build -S . -GNinja                \
-        -DCMAKE_BUILD_TYPE=Release             \
-        -DCMAKE_INSTALL_PREFIX=/usr/local      \
-        -DBUILD_TESTING=OFF                    \
-    && ninja -C build -j"$(nproc)"             \
+RUN --mount=type=cache,id=orb-slam3-build,target=/orb-slam3/build \
+    cmake -B build -S . -GNinja                                   \
+        -DCMAKE_BUILD_TYPE=Release                                \
+        -DCMAKE_INSTALL_PREFIX=/usr/local                         \
+        -DBUILD_TESTING=OFF                                       \
+    && ninja -C build -j"${NPROC:-$(nproc)}"                      \
     && cmake --install build
 
 # Prepare minimal runtime artifacts (only shared libs and binaries, no headers/archives/cmake)
@@ -142,9 +152,9 @@ RUN mkdir -p /runtime/lib /runtime/bin                                   \
     && cp -a /usr/local/bin/* /runtime/bin/
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Stage 3: runtime — minimal image with only binaries, shared libs, and vocabulary                 #
+# Stage: runtime — minimal image with only binaries, shared libs, and vocabulary                   #
 
-FROM ubuntu:22.04 AS runtime
+FROM ubuntu:24.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -156,6 +166,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1                                                   \
         libglew2.2                                               \
         libwayland-client0                                       \
+        libwayland-cursor0                                       \
         libx11-6                                                 \
         libxcursor1                                              \
         libxi6                                                   \
@@ -163,61 +174,58 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libxkbcommon0                                            \
         libxrandr2                                               \
         # Image / video codecs                                   \
-        libavcodec58                                             \
-        libavformat58                                            \
-        libavutil56                                              \
+        libavcodec60                                             \
+        libavformat60                                            \
+        libavutil58                                              \
         libjpeg8                                                 \
-        libpng16-16                                              \
-        libswscale5                                              \
-        libtiff5                                                 \
+        libpng16-16t64                                           \
+        libswscale7                                              \
+        libtiff6                                                 \
         # OpenCV runtime modules                                 \
-        libopencv-calib3d4.5d                                    \
-        libopencv-core4.5d                                       \
-        libopencv-features2d4.5d                                 \
-        libopencv-highgui4.5d                                    \
-        libopencv-imgcodecs4.5d                                  \
-        libopencv-imgproc4.5d                                    \
-        libopencv-videoio4.5d                                    \
+        libopencv-calib3d406t64                                  \
+        libopencv-core406t64                                     \
+        libopencv-features2d406t64                               \
+        libopencv-highgui406t64                                  \
+        libopencv-imgcodecs406t64                                \
+        libopencv-imgproc406t64                                  \
+        libopencv-videoio406t64                                  \
         # Boost, OpenSSL, logging, OpenMP                        \
-        libboost-program-options1.74.0                           \
-        libboost-serialization1.74.0                             \
+        libboost-program-options1.83.0                           \
+        libboost-serialization1.83.0                             \
         libgomp1                                                 \
-        libspdlog1                                               \
-        libssl3                                                  \
-        # Intel RealSense runtime                                \
-        libudev1                                                 \
-        libusb-1.0-0                                             \
+        libspdlog1.12                                            \
+        libssl3t64                                               \
         # Mesa / GLX debugging utils                             \
         libglu1-mesa                                             \
         mesa-utils                                               \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /orb_slam3
+WORKDIR /orb-slam3
 
 # Only shared libraries and binaries (no headers, static archives, or cmake configs)
 COPY --from=builder /runtime/lib/ /usr/local/lib/
 COPY --from=builder /runtime/bin/ /usr/local/bin/
 
 # ORB vocabulary
-COPY --from=builder /orb_slam3/Vocabulary/ORBvoc.txt Vocabulary/ORBvoc.txt
+COPY --from=builder /orb-slam3/Vocabulary/ORBvoc.txt Vocabulary/ORBvoc.txt
 
 # Example configuration and calibration files (executables are in /usr/local/bin/)
-COPY --from=builder /orb_slam3/Examples/ Examples/
+COPY --from=builder /orb-slam3/Examples/ Examples/
 
 RUN ldconfig
 
 ENTRYPOINT ["/bin/bash"]
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
-# Stage 4: evo — evaluation with Python + evo toolkit + SLAM binaries                             #
+# Stage: evo — evaluation with Python + evo toolkit + SLAM binaries                                #
 
 FROM runtime AS evo
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip git \
-    && pip3 install --no-cache-dir evo \
+        python3 python3-pip git                                  \
+    && pip3 install --no-cache-dir --break-system-packages evo   \
     && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT []

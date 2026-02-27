@@ -1,0 +1,52 @@
+services:
+  orb-slam3:
+    build:
+      context: ${SRC_DIR:-.}
+      target: runtime
+    image: orb-slam3:runtime
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - XAUTHORITY=/tmp/.Xauthority
+      - LIBGL_ALWAYS_SOFTWARE=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/tmp/.Xauthority:ro
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true
+
+  orb-slam3-dev:
+    build:
+      context: ${SRC_DIR:-.}
+      target: dev
+    image: orb-slam3:dev
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - XAUTHORITY=/tmp/.Xauthority
+      - LIBGL_ALWAYS_SOFTWARE=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ${XAUTHORITY:-$HOME/.Xauthority}:/tmp/.Xauthority:ro
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+      - ${SRC_DIR:-.}:/orb-slam3
+    ipc: host
+    network_mode: host
+    stdin_open: true
+    tty: true
+
+  orb-slam3-evo:
+    build:
+      context: ${SRC_DIR:-.}
+      target: evo
+    image: orb-slam3:evo
+    environment:
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ${DATASETS_DIR:-./datasets}:/datasets:ro
+      - ${RESULTS_DIR:-./results}:/orb-slam3/results
+      - ${EVALUATION_DIR:-./evaluation}:/orb-slam3/evaluation
+    stdin_open: true
+    tty: true

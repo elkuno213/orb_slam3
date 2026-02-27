@@ -2,7 +2,7 @@
   "recommendations": [
     // c++
     "ms-vscode.cpptools",
-    "llvm-vs-code-extensions.vscode-clangd",
+    "KylinIdeTeam.kylin-clangd",
     "vadimcn.vscode-lldb",
     // cmake
     "josetr.cmake-language-support-vscode",

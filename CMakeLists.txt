@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(ORB_SLAM3)
+project(ORB_SLAM3 VERSION 1.0.5)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)

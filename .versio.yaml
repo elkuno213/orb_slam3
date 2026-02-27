@@ -1,0 +1,24 @@
+options:
+  prev_tag: "versio-prev"
+
+projects:
+  - name: "orb-slam3"
+    id: 0
+    tag_prefix: ""
+    version:
+      file: "CMakeLists.txt"
+      pattern: 'VERSION (\d+\.\d+\.\d+)'
+    changelog:
+      file: "CHANGELOG.md"
+      template: "file:.versio/changelog.md.liquid"
+
+sizes:
+  use_angular: true
+  fail:
+    - "-"
+    - "*"
+
+commit:
+  message: "chore(release): versio update versions"
+  author: "elkuno213"
+  email: "vuhoi.huynh@gmail.com"

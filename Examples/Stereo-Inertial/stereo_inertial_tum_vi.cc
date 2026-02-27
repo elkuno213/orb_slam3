@@ -49,219 +49,232 @@ int main(int argc, char** argv) {
   // Parse arguments.
   std::string              vocabulary_file, settings_file, output_dir;
   std::vector<std::string> sequences;
-
-  const bool args_ok = ORB_SLAM3::TUMVI::ParseArguments(
-    argc,
-    argv,
-    vocabulary_file,
-    settings_file,
-    sequences,
-    output_dir,
-    ORB_SLAM3::Sensor::InertialStereo
-  );
-  if (!args_ok) {
+  bool                     use_viewer = true;
+  try {
+    const bool parsed = ORB_SLAM3::TUMVI::ParseArguments(
+      argc,
+      argv,
+      vocabulary_file,
+      settings_file,
+      sequences,
+      output_dir,
+      ORB_SLAM3::Sensor::InertialStereo,
+      use_viewer
+    );
+    if (!parsed) {
+      return 0;
+    }
+  } catch (const std::exception& e) {
+    spdlog::error("Error when parsing arguments: {}", e.what());
     return 1;
   }
+  // Run.
+  try {
+    const int num_seq = sequences.size() / 4;
 
-  const int num_seq = sequences.size() / 4;
+    // Load all sequences:
+    int                              seq;
+    std::vector<vector<std::string>> vstrImageLeftFilenames;
+    std::vector<vector<std::string>> vstrImageRightFilenames;
+    std::vector<vector<double>>      vTimestampsCam;
+    std::vector<vector<cv::Point3f>> vAcc, vGyro;
+    std::vector<vector<double>>      vTimestampsImu;
+    std::vector<int>                 nImages;
+    std::vector<int>                 nImu;
+    std::vector<int>                 first_imu(num_seq, 0);
 
-  // Load all sequences:
-  int                              seq;
-  std::vector<vector<std::string>> vstrImageLeftFilenames;
-  std::vector<vector<std::string>> vstrImageRightFilenames;
-  std::vector<vector<double>>      vTimestampsCam;
-  std::vector<vector<cv::Point3f>> vAcc, vGyro;
-  std::vector<vector<double>>      vTimestampsImu;
-  std::vector<int>                 nImages;
-  std::vector<int>                 nImu;
-  std::vector<int>                 first_imu(num_seq, 0);
+    vstrImageLeftFilenames.resize(num_seq);
+    vstrImageRightFilenames.resize(num_seq);
+    vTimestampsCam.resize(num_seq);
+    vAcc.resize(num_seq);
+    vGyro.resize(num_seq);
+    vTimestampsImu.resize(num_seq);
+    nImages.resize(num_seq);
+    nImu.resize(num_seq);
 
-  vstrImageLeftFilenames.resize(num_seq);
-  vstrImageRightFilenames.resize(num_seq);
-  vTimestampsCam.resize(num_seq);
-  vAcc.resize(num_seq);
-  vGyro.resize(num_seq);
-  vTimestampsImu.resize(num_seq);
-  nImages.resize(num_seq);
-  nImu.resize(num_seq);
+    int tot_images = 0;
+    for (seq = 0; seq < num_seq; seq++) {
+      std::string pathSeqLeft    = sequences[4 * seq];
+      std::string pathSeqRight   = sequences[4 * seq + 1];
+      std::string pathTimeStamps = sequences[4 * seq + 2];
+      std::string pathIMU        = sequences[4 * seq + 3];
 
-  int tot_images = 0;
-  for (seq = 0; seq < num_seq; seq++) {
-    std::string pathSeqLeft    = sequences[4 * seq];
-    std::string pathSeqRight   = sequences[4 * seq + 1];
-    std::string pathTimeStamps = sequences[4 * seq + 2];
-    std::string pathIMU        = sequences[4 * seq + 3];
+      spdlog::info("Loading images for sequence {}...", seq);
+      ORB_SLAM3::TUMVI::LoadStereoImages(
+        pathSeqLeft,
+        pathSeqRight,
+        pathTimeStamps,
+        vstrImageLeftFilenames[seq],
+        vstrImageRightFilenames[seq],
+        vTimestampsCam[seq]
+      );
+      spdlog::info("Total images: {}", vstrImageLeftFilenames[seq].size());
+      spdlog::info("Total cam ts: {}", vTimestampsCam[seq].size());
+      spdlog::info("first cam ts: {}", vTimestampsCam[seq][0]);
+      spdlog::info("Images loaded!");
 
-    spdlog::info("Loading images for sequence {}...", seq);
-    ORB_SLAM3::TUMVI::LoadStereoImages(
-      pathSeqLeft,
-      pathSeqRight,
-      pathTimeStamps,
-      vstrImageLeftFilenames[seq],
-      vstrImageRightFilenames[seq],
-      vTimestampsCam[seq]
-    );
-    spdlog::info("Total images: {}", vstrImageLeftFilenames[seq].size());
-    spdlog::info("Total cam ts: {}", vTimestampsCam[seq].size());
-    spdlog::info("first cam ts: {}", vTimestampsCam[seq][0]);
-    spdlog::info("Images loaded!");
+      spdlog::info("Loading IMU for sequence {}...", seq);
+      ORB_SLAM3::TUMVI::LoadIMU(pathIMU, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
+      spdlog::info("Total IMU measurements: {}", vTimestampsImu[seq].size());
+      spdlog::info("first IMU ts: {}", vTimestampsImu[seq][0]);
+      spdlog::info("IMU data loaded!");
 
-    spdlog::info("Loading IMU for sequence {}...", seq);
-    ORB_SLAM3::TUMVI::LoadIMU(pathIMU, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-    spdlog::info("Total IMU measurements: {}", vTimestampsImu[seq].size());
-    spdlog::info("first IMU ts: {}", vTimestampsImu[seq][0]);
-    spdlog::info("IMU data loaded!");
+      nImages[seq] = vstrImageLeftFilenames[seq].size();
+      tot_images   += nImages[seq];
+      nImu[seq]    = vTimestampsImu[seq].size();
 
-    nImages[seq] = vstrImageLeftFilenames[seq].size();
-    tot_images   += nImages[seq];
-    nImu[seq]    = vTimestampsImu[seq].size();
-
-    if ((nImages[seq] <= 0) || (nImu[seq] <= 0)) {
-      spdlog::error("Failed to load images or IMU for sequence {}", seq);
-      return 1;
-    }
-
-    // Find first imu to be considered, supposing imu measurements start first
-
-    while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][0]) {
-      first_imu[seq]++;
-    }
-    first_imu[seq]--; // first imu measurement to be considered
-  }
-
-  // Vector for tracking time statistics
-  std::vector<float> vTimesTrack;
-  vTimesTrack.resize(tot_images);
-
-  // Create SLAM system. It initializes all system threads and gets ready to process frames.
-  ORB_SLAM3::System
-        SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::IMU_STEREO, true, 0, output_dir);
-  float imageScale = SLAM.GetImageScale();
-
-  double t_resize = 0.f;
-  double t_track  = 0.f;
-
-  int proccIm = 0;
-  for (seq = 0; seq < num_seq; seq++) {
-    // Main loop
-    cv::Mat                            imLeft, imRight;
-    std::vector<ORB_SLAM3::IMU::Point> vImuMeas;
-    proccIm                  = 0;
-    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-    for (int ni = 0; ni < nImages[seq]; ni++, proccIm++) {
-      // Read image from file
-      imLeft  = cv::imread(vstrImageLeftFilenames[seq][ni], cv::IMREAD_GRAYSCALE);
-      imRight = cv::imread(vstrImageRightFilenames[seq][ni], cv::IMREAD_GRAYSCALE);
-
-      if (imageScale != 1.f) {
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
-#endif
-        int width  = imLeft.cols * imageScale;
-        int height = imLeft.rows * imageScale;
-        cv::resize(imLeft, imLeft, cv::Size(width, height));
-        cv::resize(imRight, imRight, cv::Size(width, height));
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
-        t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                     t_End_Resize - t_Start_Resize
-        )
-                     .count();
-        SLAM.InsertResizeTime(t_resize);
-#endif
-      }
-
-      // clahe
-      clahe->apply(imLeft, imLeft);
-      clahe->apply(imRight, imRight);
-
-      double tframe = vTimestampsCam[seq][ni];
-
-      if (imLeft.empty() || imRight.empty()) {
-        spdlog::error("Failed to load image at: {}", vstrImageLeftFilenames[seq][ni]);
+      if ((nImages[seq] <= 0) || (nImu[seq] <= 0)) {
+        spdlog::error("Failed to load images or IMU for sequence {}", seq);
         return 1;
       }
 
-      // Load imu measurements from previous frame
-      vImuMeas.clear();
+      // Find first imu to be considered, supposing imu measurements start first
 
-      if (ni > 0) {
-        while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][ni]) {
-          // vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[first_imu],vGyro[first_imu],vTimestampsImu[first_imu]));
-          vImuMeas.push_back(ORB_SLAM3::IMU::Point(
-            vAcc[seq][first_imu[seq]].x,
-            vAcc[seq][first_imu[seq]].y,
-            vAcc[seq][first_imu[seq]].z,
-            vGyro[seq][first_imu[seq]].x,
-            vGyro[seq][first_imu[seq]].y,
-            vGyro[seq][first_imu[seq]].z,
-            vTimestampsImu[seq][first_imu[seq]]
-          ));
-          first_imu[seq]++;
-        }
+      while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][0]) {
+        first_imu[seq]++;
       }
+      first_imu[seq]--; // first imu measurement to be considered
+    }
 
-      std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    // Vector for tracking time statistics
+    std::vector<float> vTimesTrack;
+    vTimesTrack.resize(tot_images);
 
-      // Pass the image to the SLAM system
-      SLAM.TrackStereo(imLeft, imRight, tframe, vImuMeas);
+    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    ORB_SLAM3::System SLAM(
+      vocabulary_file, settings_file, ORB_SLAM3::System::IMU_STEREO, use_viewer, 0, output_dir
+    );
+    float imageScale = SLAM.GetImageScale();
 
-      std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    double t_resize = 0.f;
+    double t_track  = 0.f;
+
+    int proccIm = 0;
+    for (seq = 0; seq < num_seq; seq++) {
+      // Main loop
+      cv::Mat                            imLeft, imRight;
+      std::vector<ORB_SLAM3::IMU::Point> vImuMeas;
+      proccIm                  = 0;
+      cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+      for (int ni = 0; ni < nImages[seq]; ni++, proccIm++) {
+        // Read image from file
+        imLeft  = cv::imread(vstrImageLeftFilenames[seq][ni], cv::IMREAD_GRAYSCALE);
+        imRight = cv::imread(vstrImageRightFilenames[seq][ni], cv::IMREAD_GRAYSCALE);
+
+        if (imageScale != 1.f) {
+#ifdef REGISTER_TIMES
+          std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+#endif
+          int width  = imLeft.cols * imageScale;
+          int height = imLeft.rows * imageScale;
+          cv::resize(imLeft, imLeft, cv::Size(width, height));
+          cv::resize(imRight, imRight, cv::Size(width, height));
+#ifdef REGISTER_TIMES
+          std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+          t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+                       t_End_Resize - t_Start_Resize
+          )
+                       .count();
+          SLAM.InsertResizeTime(t_resize);
+#endif
+        }
+
+        // clahe
+        clahe->apply(imLeft, imLeft);
+        clahe->apply(imRight, imRight);
+
+        double tframe = vTimestampsCam[seq][ni];
+
+        if (imLeft.empty() || imRight.empty()) {
+          spdlog::error("Failed to load image at: {}", vstrImageLeftFilenames[seq][ni]);
+          return 1;
+        }
+
+        // Load imu measurements from previous frame
+        vImuMeas.clear();
+
+        if (ni > 0) {
+          while (vTimestampsImu[seq][first_imu[seq]] <= vTimestampsCam[seq][ni]) {
+            // vImuMeas.push_back(ORB_SLAM3::IMU::Point(vAcc[first_imu],vGyro[first_imu],vTimestampsImu[first_imu]));
+            vImuMeas.push_back(ORB_SLAM3::IMU::Point(
+              vAcc[seq][first_imu[seq]].x,
+              vAcc[seq][first_imu[seq]].y,
+              vAcc[seq][first_imu[seq]].z,
+              vGyro[seq][first_imu[seq]].x,
+              vGyro[seq][first_imu[seq]].y,
+              vGyro[seq][first_imu[seq]].z,
+              vTimestampsImu[seq][first_imu[seq]]
+            ));
+            first_imu[seq]++;
+          }
+        }
+
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+        // Pass the image to the SLAM system
+        SLAM.TrackStereo(imLeft, imRight, tframe, vImuMeas);
+
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
 #ifdef REGISTER_TIMES
-      t_track
-        = t_resize
-        + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
-      SLAM.InsertTrackTime(t_track);
+        t_track
+          = t_resize
+          + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+        SLAM.InsertTrackTime(t_track);
 #endif
 
-      double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
-      ttrack_tot    += ttrack;
+        double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+        ttrack_tot    += ttrack;
 
-      vTimesTrack[ni] = ttrack;
+        vTimesTrack[ni] = ttrack;
 
-      // Wait to load the next frame
-      double T = 0;
-      if (ni < nImages[seq] - 1) {
-        T = vTimestampsCam[seq][ni + 1] - tframe;
-      } else if (ni > 0) {
-        T = tframe - vTimestampsCam[seq][ni - 1];
+        // Wait to load the next frame
+        double T = 0;
+        if (ni < nImages[seq] - 1) {
+          T = vTimestampsCam[seq][ni + 1] - tframe;
+        } else if (ni > 0) {
+          T = tframe - vTimestampsCam[seq][ni - 1];
+        }
+
+        if (ttrack < T) {
+          usleep((T - ttrack) * 1e6); // 1e6
+        }
       }
-
-      if (ttrack < T) {
-        usleep((T - ttrack) * 1e6); // 1e6
+      if (seq < num_seq - 1) {
+        spdlog::info("Changing the dataset...");
+        SLAM.ChangeDataset();
       }
     }
-    if (seq < num_seq - 1) {
-      spdlog::info("Changing the dataset...");
-      SLAM.ChangeDataset();
+
+    // Stop all threads
+    SLAM.Shutdown();
+
+    // Tracking time statistics
+
+    // Save camera trajectory
+    std::chrono::system_clock::time_point scNow = std::chrono::system_clock::now();
+    std::time_t                           now   = std::chrono::system_clock::to_time_t(scNow);
+    std::stringstream                     ss;
+    ss << now;
+
+    fs::path output_file_path;
+    output_file_path = fs::path(output_dir) / "CameraTrajectory.txt";
+    SLAM.SaveTrajectoryEuRoC(output_file_path.string());
+    output_file_path = fs::path(output_dir) / "KeyFrameTrajectory.txt";
+    SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
+
+    std::sort(vTimesTrack.begin(), vTimesTrack.end());
+    float totaltime = 0;
+    for (int ni = 0; ni < nImages[0]; ni++) {
+      totaltime += vTimesTrack[ni];
     }
+    spdlog::info("median tracking time: {}", vTimesTrack[nImages[0] / 2]);
+    spdlog::info("mean tracking time: {}", totaltime / proccIm);
+  } catch (const std::exception& e) {
+    spdlog::error("Error when running ORB-SLAM3: {}", e.what());
+  } catch (...) {
+    spdlog::error("Unknown error when running ORB-SLAM3");
   }
-
-  // Stop all threads
-  SLAM.Shutdown();
-
-  // Tracking time statistics
-
-  // Save camera trajectory
-  std::chrono::system_clock::time_point scNow = std::chrono::system_clock::now();
-  std::time_t                           now   = std::chrono::system_clock::to_time_t(scNow);
-  std::stringstream                     ss;
-  ss << now;
-
-  fs::path output_file_path;
-  output_file_path = fs::path(output_dir) / "CameraTrajectory.txt";
-  SLAM.SaveTrajectoryEuRoC(output_file_path.string());
-  output_file_path = fs::path(output_dir) / "KeyFrameTrajectory.txt";
-  SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
-
-  std::sort(vTimesTrack.begin(), vTimesTrack.end());
-  float totaltime = 0;
-  for (int ni = 0; ni < nImages[0]; ni++) {
-    totaltime += vTimesTrack[ni];
-  }
-  spdlog::info("median tracking time: {}", vTimesTrack[nImages[0] / 2]);
-  spdlog::info("mean tracking time: {}", totaltime / proccIm);
 
   return 0;
 }

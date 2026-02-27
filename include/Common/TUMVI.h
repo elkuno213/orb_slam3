@@ -37,7 +37,8 @@ bool ParseArguments(
   std::string&              settings_filename,
   std::vector<std::string>& sequences,
   std::string&              output_dir,
-  Sensor                    sensor
+  Sensor                    sensor,
+  bool&                     use_viewer
 );
 
 } // namespace ORB_SLAM3::TUMVI

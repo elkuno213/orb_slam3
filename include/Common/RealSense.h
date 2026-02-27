@@ -27,7 +27,8 @@ bool ParseArguments(
   char**       argv,
   std::string& vocabulary_filename,
   std::string& settings_filename,
-  std::string& output_dir
+  std::string& output_dir,
+  bool&        use_viewer
 );
 
 } // namespace ORB_SLAM3::RealSense

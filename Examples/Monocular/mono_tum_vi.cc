@@ -49,158 +49,173 @@ int main(int argc, char** argv) {
   // Parse arguments.
   std::string              vocabulary_file, settings_file, output_dir;
   std::vector<std::string> sequences;
-
-  const bool args_ok = ORB_SLAM3::TUMVI::ParseArguments(
-    argc,
-    argv,
-    vocabulary_file,
-    settings_file,
-    sequences,
-    output_dir,
-    ORB_SLAM3::Sensor::Monocular
-  );
-  if (!args_ok) {
+  bool                     use_viewer = true;
+  try {
+    const bool parsed = ORB_SLAM3::TUMVI::ParseArguments(
+      argc,
+      argv,
+      vocabulary_file,
+      settings_file,
+      sequences,
+      output_dir,
+      ORB_SLAM3::Sensor::Monocular,
+      use_viewer
+    );
+    if (!parsed) {
+      return 0;
+    }
+  } catch (const std::exception& e) {
+    spdlog::error("Error when parsing arguments: {}", e.what());
     return 1;
   }
 
-  const int num_seq = sequences.size() / 2;
+  // Run.
+  try {
+    const int num_seq = sequences.size() / 2;
 
-  // Load all sequences:
-  int                              seq;
-  std::vector<vector<std::string>> vstrImageFilenames;
-  std::vector<vector<double>>      vTimestampsCam;
-  std::vector<int>                 nImages;
+    // Load all sequences:
+    int                              seq;
+    std::vector<vector<std::string>> vstrImageFilenames;
+    std::vector<vector<double>>      vTimestampsCam;
+    std::vector<int>                 nImages;
 
-  vstrImageFilenames.resize(num_seq);
-  vTimestampsCam.resize(num_seq);
-  nImages.resize(num_seq);
+    vstrImageFilenames.resize(num_seq);
+    vTimestampsCam.resize(num_seq);
+    nImages.resize(num_seq);
 
-  int tot_images = 0;
-  for (seq = 0; seq < num_seq; seq++) {
-    std::string pathSeq        = sequences[2 * seq];
-    std::string pathTimeStamps = sequences[2 * seq + 1];
+    int tot_images = 0;
+    for (seq = 0; seq < num_seq; seq++) {
+      std::string pathSeq        = sequences[2 * seq];
+      std::string pathTimeStamps = sequences[2 * seq + 1];
 
-    spdlog::info("Loading images for sequence {}...", seq);
-    ORB_SLAM3::TUMVI::LoadMonocularImages(
-      pathSeq,
-      pathTimeStamps,
-      vstrImageFilenames[seq],
-      vTimestampsCam[seq]
-    );
-    spdlog::info("Images loaded!");
+      spdlog::info("Loading images for sequence {}...", seq);
+      ORB_SLAM3::TUMVI::LoadMonocularImages(
+        pathSeq,
+        pathTimeStamps,
+        vstrImageFilenames[seq],
+        vTimestampsCam[seq]
+      );
+      spdlog::info("Images loaded!");
 
-    nImages[seq] = vstrImageFilenames[seq].size();
-    tot_images   += nImages[seq];
+      nImages[seq] = vstrImageFilenames[seq].size();
+      tot_images   += nImages[seq];
 
-    if ((nImages[seq] <= 0)) {
-      spdlog::error("Failed to load images for sequence {}", seq);
-      return 1;
-    }
-  }
-  // Vector for tracking time statistics
-  std::vector<float> vTimesTrack;
-  vTimesTrack.resize(tot_images);
-
-  // Create SLAM system. It initializes all system threads and gets ready to process frames.
-  ORB_SLAM3::System
-        SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, false, 0, output_dir);
-  float imageScale = SLAM.GetImageScale();
-
-  double t_resize = 0.f;
-  double t_track  = 0.f;
-
-  int proccIm = 0;
-  for (seq = 0; seq < num_seq; seq++) {
-    // Main loop
-    cv::Mat im;
-    proccIm                  = 0;
-    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
-    for (int ni = 0; ni < nImages[seq]; ni++, proccIm++) {
-      // Read image from file
-      im = cv::imread(vstrImageFilenames[seq][ni], cv::IMREAD_GRAYSCALE); //,cv::IMREAD_GRAYSCALE);
-
-      if (imageScale != 1.f) {
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
-#endif
-        int width  = im.cols * imageScale;
-        int height = im.rows * imageScale;
-        cv::resize(im, im, cv::Size(width, height));
-#ifdef REGISTER_TIMES
-        std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
-        t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-                     t_End_Resize - t_Start_Resize
-        )
-                     .count();
-        SLAM.InsertResizeTime(t_resize);
-#endif
-      }
-
-      // clahe
-      clahe->apply(im, im);
-
-      double tframe = vTimestampsCam[seq][ni];
-
-      if (im.empty()) {
-        spdlog::error("Failed to load image at: {}", vstrImageFilenames[seq][ni]);
+      if ((nImages[seq] <= 0)) {
+        spdlog::error("Failed to load images for sequence {}", seq);
         return 1;
       }
-      std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    }
+    // Vector for tracking time statistics
+    std::vector<float> vTimesTrack;
+    vTimesTrack.resize(tot_images);
 
-      // Pass the image to the SLAM system
-      SLAM.TrackMonocular(im, tframe); // TODO change to monocular_inertial
+    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    ORB_SLAM3::System SLAM(
+      vocabulary_file, settings_file, ORB_SLAM3::System::MONOCULAR, use_viewer, 0, output_dir
+    );
+    float imageScale = SLAM.GetImageScale();
 
-      std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    double t_resize = 0.f;
+    double t_track  = 0.f;
+
+    int proccIm = 0;
+    for (seq = 0; seq < num_seq; seq++) {
+      // Main loop
+      cv::Mat im;
+      proccIm                  = 0;
+      cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+      for (int ni = 0; ni < nImages[seq]; ni++, proccIm++) {
+        // Read image from file
+        im
+          = cv::imread(vstrImageFilenames[seq][ni], cv::IMREAD_GRAYSCALE); //,cv::IMREAD_GRAYSCALE);
+
+        if (imageScale != 1.f) {
+#ifdef REGISTER_TIMES
+          std::chrono::steady_clock::time_point t_Start_Resize = std::chrono::steady_clock::now();
+#endif
+          int width  = im.cols * imageScale;
+          int height = im.rows * imageScale;
+          cv::resize(im, im, cv::Size(width, height));
+#ifdef REGISTER_TIMES
+          std::chrono::steady_clock::time_point t_End_Resize = std::chrono::steady_clock::now();
+          t_resize = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
+                       t_End_Resize - t_Start_Resize
+          )
+                       .count();
+          SLAM.InsertResizeTime(t_resize);
+#endif
+        }
+
+        // clahe
+        clahe->apply(im, im);
+
+        double tframe = vTimestampsCam[seq][ni];
+
+        if (im.empty()) {
+          spdlog::error("Failed to load image at: {}", vstrImageFilenames[seq][ni]);
+          return 1;
+        }
+        std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+
+        // Pass the image to the SLAM system
+        SLAM.TrackMonocular(im, tframe); // TODO change to monocular_inertial
+
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
 #ifdef REGISTER_TIMES
-      t_track
-        = t_resize
-        + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
-      SLAM.InsertTrackTime(t_track);
+        t_track
+          = t_resize
+          + std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(t2 - t1).count();
+        SLAM.InsertTrackTime(t_track);
 #endif
 
-      double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
-      ttrack_tot    += ttrack;
+        double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+        ttrack_tot    += ttrack;
 
-      vTimesTrack[ni] = ttrack;
+        vTimesTrack[ni] = ttrack;
 
-      // Wait to load the next frame
-      double T = 0;
-      if (ni < nImages[seq] - 1) {
-        T = vTimestampsCam[seq][ni + 1] - tframe;
-      } else if (ni > 0) {
-        T = tframe - vTimestampsCam[seq][ni - 1];
+        // Wait to load the next frame
+        double T = 0;
+        if (ni < nImages[seq] - 1) {
+          T = vTimestampsCam[seq][ni + 1] - tframe;
+        } else if (ni > 0) {
+          T = tframe - vTimestampsCam[seq][ni - 1];
+        }
+
+        if (ttrack < T) {
+          usleep((T - ttrack) * 1e6); // 1e6
+        }
       }
-
-      if (ttrack < T) {
-        usleep((T - ttrack) * 1e6); // 1e6
+      if (seq < num_seq - 1) {
+        spdlog::info("Changing the dataset...");
+        SLAM.ChangeDataset();
       }
     }
-    if (seq < num_seq - 1) {
-      spdlog::info("Changing the dataset...");
-      SLAM.ChangeDataset();
+
+    // Stop all threads
+    SLAM.Shutdown();
+
+    // Tracking time statistics
+
+    // Save camera trajectory
+    fs::path output_file_path;
+    output_file_path = fs::path(output_dir) / "CameraTrajectory.txt";
+    SLAM.SaveTrajectoryEuRoC(output_file_path.string());
+    output_file_path = fs::path(output_dir) / "KeyFrameTrajectory.txt";
+    SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
+
+    std::sort(vTimesTrack.begin(), vTimesTrack.end());
+    float totaltime = 0;
+    for (int ni = 0; ni < nImages[0]; ni++) {
+      totaltime += vTimesTrack[ni];
     }
+    spdlog::info("median tracking time: {}", vTimesTrack[nImages[0] / 2]);
+    spdlog::info("mean tracking time: {}", totaltime / proccIm);
+  } catch (const std::exception& e) {
+    spdlog::error("Error when running ORB-SLAM3: {}", e.what());
+  } catch (...) {
+    spdlog::error("Unknown error when running ORB-SLAM3");
   }
-
-  // Stop all threads
-  SLAM.Shutdown();
-
-  // Tracking time statistics
-
-  // Save camera trajectory
-  fs::path output_file_path;
-  output_file_path = fs::path(output_dir) / "CameraTrajectory.txt";
-  SLAM.SaveTrajectoryEuRoC(output_file_path.string());
-  output_file_path = fs::path(output_dir) / "KeyFrameTrajectory.txt";
-  SLAM.SaveKeyFrameTrajectoryEuRoC("KeyFrameTrajectory.txt");
-
-  std::sort(vTimesTrack.begin(), vTimesTrack.end());
-  float totaltime = 0;
-  for (int ni = 0; ni < nImages[0]; ni++) {
-    totaltime += vTimesTrack[ni];
-  }
-  spdlog::info("median tracking time: {}", vTimesTrack[nImages[0] / 2]);
-  spdlog::info("mean tracking time: {}", totaltime / proccIm);
 
   return 0;
 }

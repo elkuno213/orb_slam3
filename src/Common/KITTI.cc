@@ -84,7 +84,8 @@ bool ParseArguments(
   std::string& vocabulary_file,
   std::string& settings_file,
   std::string& sequence_dir,
-  std::string& output_dir
+  std::string& output_dir,
+  bool&        use_viewer
 ) {
   po::options_description desc("Allowed options");
   // clang-format off
@@ -93,7 +94,8 @@ bool ParseArguments(
     ("vocabulary-file", po::value<std::string>(&vocabulary_file)->required(), "Path to vocabulary text file")
     ("settings-file", po::value<std::string>(&settings_file)->required(), "Path to settings yaml file")
     ("sequence-dir", po::value<std::string>(&sequence_dir)->required(), "Path to sequence directory")
-    ("output-dir", po::value<std::string>(&output_dir)->default_value("/tmp"), "Path to output directory");
+    ("output-dir", po::value<std::string>(&output_dir)->default_value("/tmp"), "Path to output directory")
+    ("no-viewer", "Disable the Pangolin viewer");
   // clang-format on
 
   po::variables_map vm;
@@ -124,6 +126,8 @@ bool ParseArguments(
   if (!fs::is_directory(output_dir)) {
     throw po::error("Output directory does NOT exist: " + output_dir);
   }
+
+  use_viewer = vm.count("no-viewer") == 0;
 
   return true;
 }

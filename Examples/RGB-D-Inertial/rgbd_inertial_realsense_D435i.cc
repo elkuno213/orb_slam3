@@ -55,13 +55,15 @@ int main(int argc, char** argv) {
 
   // Parse arguments.
   std::string vocabulary_file, settings_file, output_dir;
+  bool        use_viewer = true;
   try {
     const bool parsed = ORB_SLAM3::RealSense::ParseArguments(
       argc,
       argv,
       vocabulary_file,
       settings_file,
-      output_dir
+      output_dir,
+      use_viewer
     );
     if (!parsed) {
       return 0;
@@ -285,8 +287,9 @@ int main(int argc, char** argv) {
     );
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System
-          SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::IMU_RGBD, true, 0, output_dir);
+    ORB_SLAM3::System SLAM(
+      vocabulary_file, settings_file, ORB_SLAM3::System::IMU_RGBD, use_viewer, 0, output_dir
+    );
     float imageScale = SLAM.GetImageScale();
 
     double  timestamp;

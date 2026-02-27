@@ -51,6 +51,7 @@ int main(int argc, char** argv) {
   // Parse arguments.
   std::string              vocabulary_file, settings_file, output_dir;
   std::vector<std::string> sequences;
+  bool                     use_viewer = true;
   try {
     const bool parsed = ORB_SLAM3::EuRoC::ParseArguments(
       argc,
@@ -58,7 +59,8 @@ int main(int argc, char** argv) {
       vocabulary_file,
       settings_file,
       sequences,
-      output_dir
+      output_dir,
+      use_viewer
     );
     if (!parsed) {
       return 0;
@@ -135,7 +137,7 @@ int main(int argc, char** argv) {
     vTimesTrack.resize(tot_images);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::IMU_MONOCULAR, true);
+    ORB_SLAM3::System SLAM(vocabulary_file, settings_file, ORB_SLAM3::System::IMU_MONOCULAR, use_viewer);
     float             imageScale = SLAM.GetImageScale();
 
     double t_resize = 0.f;

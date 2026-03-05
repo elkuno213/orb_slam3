@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """ORB-SLAM3 evaluation verification script.
 
-Runs ORB-SLAM3 binaries on reference datasets and evaluates trajectory accuracy
-using ATE RMSE metrics from the evo library. Supports two modes:
+Runs the unified orb_slam3_offline binary on reference datasets and evaluates
+trajectory accuracy using ATE RMSE metrics from the evo library. Supports two
+modes:
 
 - baseline: Run N times, save median ATE RMSE to JSON for future comparison.
 - verify:   Run N times, compare against saved baseline (threshold = factor * median).
@@ -33,13 +34,14 @@ from evo.core import metrics, sync
 from evo.core.metrics import PoseRelation, StatisticsType
 from evo.core.trajectory import PoseTrajectory3D
 from evo.tools import file_interface
+from evo.tools.file_interface import FileInterfaceException
 
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
 # Constants                                                                                        #
 
-WORKING_DIR: Final[str] = "/orb_slam3"
+WORKING_DIR: Final[str] = "/orb-slam3"
 DATASETS_DIR: Final[str] = "/datasets"
 VOCABULARY_FILE: Final[str] = "Vocabulary/ORBvoc.txt"
 TRAJECTORY_FILENAME: Final[str] = "CameraTrajectory.txt"
@@ -50,6 +52,7 @@ DEFAULT_THRESHOLD_FACTOR: Final[float] = 1.5
 DEFAULT_BASELINE_FILE: Final[str] = "evaluation/baseline.json"
 DEFAULT_OUTPUT_FILE: Final[str] = "results/output.json"
 JSON_VERSION: Final[int] = 1
+BINARY: Final[str] = "orb_slam3_offline"
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
 # Data model                                                                                       #
@@ -57,10 +60,16 @@ JSON_VERSION: Final[int] = 1
 
 @dataclass(frozen=True)
 class TestConfig:
-    """Configuration for a single ORB-SLAM3 evaluation test."""
+    """Configuration for a single ORB-SLAM3 evaluation test.
+
+    Each test targets the unified orb_slam3_offline binary with explicit
+    dataset, sensor, and inertial parameters.
+    """
 
     name: str
-    binary: str
+    dataset: str  # "euroc", "tum", or "tumvi"
+    sensor: str  # "mono", "stereo", or "rgbd"
+    inertial: bool
     output_format: str  # "tum" or "euroc"
     gt_path: str  # Relative to DATASETS_DIR
     gt_format: str  # "tum" or "euroc"
@@ -71,11 +80,8 @@ class TestConfig:
 
 
 # TUM-VI dataset base path components
-_TUMVI_BASE: Final[str] = "tum-vi/dataset-corridor1_512_16/mav0"
-_TUMVI_CAM0_DATA: Final[str] = f"/datasets/{_TUMVI_BASE}/cam0/data"
-_TUMVI_CAM0_CSV: Final[str] = f"/datasets/{_TUMVI_BASE}/cam0/data.csv"
-_TUMVI_IMU_CSV: Final[str] = f"/datasets/{_TUMVI_BASE}/imu0/data.csv"
-_TUMVI_GT_PATH: Final[str] = f"{_TUMVI_BASE}/mocap0/data.csv"
+_TUMVI_BASE: Final[str] = "tum-vi/dataset-corridor1_512_16"
+_TUMVI_GT_PATH: Final[str] = f"{_TUMVI_BASE}/mav0/mocap0/data.csv"
 
 # EuRoC dataset base paths
 _EUROC_V1_01: Final[str] = "/datasets/euroc-mav/V1_01_easy"
@@ -87,38 +93,40 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
     # ── RGB-D TUM (2 tests, different sequences) ─────────────────────────────
     "rgbd_tum_fr1_room": TestConfig(
         name="rgbd_tum_fr1_room",
-        binary="rgbd_tum",
+        dataset="tum",
+        sensor="rgbd",
+        inertial=False,
         output_format="tum",
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg1_room/groundtruth.txt",
         gt_format="tum",
         alignment="se3",
         settings_file="Examples/RGB-D/TUM1.yaml",
         command_args=[
-            "--sequence-dir",
+            "--data",
             "/datasets/tum-rgbd-slam/rgbd_dataset_freiburg1_room",
-            "--association-file",
-            "Examples/RGB-D/associations/fr1_room.txt",
         ],
     ),
     "rgbd_tum_fr2_pioneer_slam": TestConfig(
         name="rgbd_tum_fr2_pioneer_slam",
-        binary="rgbd_tum",
+        dataset="tum",
+        sensor="rgbd",
+        inertial=False,
         output_format="tum",
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg2_pioneer_slam/groundtruth.txt",
         gt_format="tum",
         alignment="se3",
         settings_file="Examples/RGB-D/TUM2.yaml",
         command_args=[
-            "--sequence-dir",
+            "--data",
             "/datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_pioneer_slam",
-            "--association-file",
-            "Examples/RGB-D/associations/fr2_pioneer_slam.txt",
         ],
     ),
     # ── Monocular (2 tests, TUM + EuRoC) ─────────────────────────────────────
     "mono_tum_fr1_room": TestConfig(
         name="mono_tum_fr1_room",
-        binary="mono_tum",
+        dataset="tum",
+        sensor="mono",
+        inertial=False,
         output_format="tum",
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg1_room/groundtruth.txt",
         gt_format="tum",
@@ -126,110 +134,116 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         settings_file="Examples/Monocular/TUM1.yaml",
         trajectory_filename="KeyFrameTrajectory.txt",
         command_args=[
-            "--sequence-dir",
+            "--data",
             "/datasets/tum-rgbd-slam/rgbd_dataset_freiburg1_room",
         ],
     ),
     "mono_euroc_v1_01": TestConfig(
         name="mono_euroc_v1_01",
-        binary="mono_euroc",
+        dataset="euroc",
+        sensor="mono",
+        inertial=False,
         output_format="euroc",
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="sim3",
         settings_file="Examples/Monocular/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_01,
-            f"{_EUROC_V1_01}/mav0/cam0/data.csv",
         ],
     ),
     # ── Monocular-Inertial (2 tests, TUM-VI + EuRoC) ─────────────────────────
     "mono_inertial_tum_vi_corridor1": TestConfig(
         name="mono_inertial_tum_vi_corridor1",
-        binary="mono_inertial_tum_vi",
+        dataset="tumvi",
+        sensor="mono",
+        inertial=True,
         output_format="euroc",
         gt_path=_TUMVI_GT_PATH,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Monocular-Inertial/TUM-VI.yaml",
         command_args=[
-            "--sequences",
-            _TUMVI_CAM0_DATA,
-            _TUMVI_CAM0_CSV,
-            _TUMVI_IMU_CSV,
+            "--data",
+            f"/datasets/{_TUMVI_BASE}",
         ],
     ),
     "mono_inertial_euroc_v1_01": TestConfig(
         name="mono_inertial_euroc_v1_01",
-        binary="mono_inertial_euroc",
+        dataset="euroc",
+        sensor="mono",
+        inertial=True,
         output_format="euroc",
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Monocular-Inertial/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_01,
-            f"{_EUROC_V1_01}/mav0/cam0/data.csv",
         ],
     ),
     # ── Stereo EuRoC (2 tests, different sequences) ──────────────────────────
     "stereo_euroc_v1_01": TestConfig(
         name="stereo_euroc_v1_01",
-        binary="stereo_euroc",
+        dataset="euroc",
+        sensor="stereo",
+        inertial=False,
         output_format="euroc",
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Stereo/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_01,
-            f"{_EUROC_V1_01}/mav0/cam0/data.csv",
         ],
     ),
     "stereo_euroc_v1_02": TestConfig(
         name="stereo_euroc_v1_02",
-        binary="stereo_euroc",
+        dataset="euroc",
+        sensor="stereo",
+        inertial=False,
         output_format="euroc",
         gt_path=_EUROC_V1_02_GT,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Stereo/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_02,
-            f"{_EUROC_V1_02}/mav0/cam0/data.csv",
         ],
     ),
     # ── Stereo-Inertial EuRoC (2 tests, different sequences) ─────────────────
     "stereo_inertial_euroc_v1_01": TestConfig(
         name="stereo_inertial_euroc_v1_01",
-        binary="stereo_inertial_euroc",
+        dataset="euroc",
+        sensor="stereo",
+        inertial=True,
         output_format="euroc",
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Stereo-Inertial/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_01,
-            f"{_EUROC_V1_01}/mav0/cam0/data.csv",
         ],
     ),
     "stereo_inertial_euroc_v1_02": TestConfig(
         name="stereo_inertial_euroc_v1_02",
-        binary="stereo_inertial_euroc",
+        dataset="euroc",
+        sensor="stereo",
+        inertial=True,
         output_format="euroc",
         gt_path=_EUROC_V1_02_GT,
         gt_format="euroc",
         alignment="se3",
         settings_file="Examples/Stereo-Inertial/EuRoC.yaml",
         command_args=[
-            "--sequences",
+            "--data",
             _EUROC_V1_02,
-            f"{_EUROC_V1_02}/mav0/cam0/data.csv",
         ],
     ),
 }
@@ -260,10 +274,7 @@ def read_euroc_output(filepath: Path) -> PoseTrajectory3D:
     """
     raw = np.loadtxt(str(filepath))
     if raw.ndim != 2 or raw.shape[1] != 8:
-        msg = (
-            f"Expected 8 columns (ts tx ty tz qx qy qz qw), "
-            f"got shape {raw.shape} in {filepath}"
-        )
+        msg = f"Expected 8 columns (ts tx ty tz qx qy qz qw), got shape {raw.shape} in {filepath}"
         raise ValueError(msg)
 
     timestamps = raw[:, 0] / 1e9  # ns -> seconds
@@ -358,7 +369,10 @@ def compute_ate_rmse(
 
 
 def build_command(config: TestConfig, output_dir: str) -> list[str]:
-    """Build the subprocess command for an ORB-SLAM3 binary.
+    """Build the subprocess command for the unified orb_slam3_offline binary.
+
+    Constructs the full command line including dataset, sensor, and inertial
+    flags derived from the test configuration.
 
     Args:
         config: Test configuration.
@@ -368,13 +382,19 @@ def build_command(config: TestConfig, output_dir: str) -> list[str]:
         Command as a list of strings.
     """
     cmd = [
-        config.binary,
+        BINARY,
         "--vocabulary-file",
         VOCABULARY_FILE,
         "--no-viewer",
         "--settings-file",
         config.settings_file,
+        "--dataset",
+        config.dataset,
+        "--sensor",
+        config.sensor,
     ]
+    if config.inertial:
+        cmd.append("--inertial")
     cmd.extend(config.command_args)
     cmd.extend(["--output-dir", output_dir])
     return cmd
@@ -477,7 +497,12 @@ def run_test(config: TestConfig, num_runs: int) -> list[float]:
                 RUN_TIMEOUT_SECONDS,
             )
             results.append(float("nan"))
-        except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as exc:
+        except (
+            subprocess.CalledProcessError,
+            FileNotFoundError,
+            FileInterfaceException,
+            ValueError,
+        ) as exc:
             logger.error("Test '%s' run %d failed: %s", config.name, i + 1, exc)
             results.append(float("nan"))
     return results

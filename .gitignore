@@ -30,3 +30,6 @@ __pycache__/
 # Data
 datasets/
 results/
+
+# Documentation (generated)
+docs/

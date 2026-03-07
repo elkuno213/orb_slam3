@@ -39,7 +39,9 @@ void loadMonocularImages(
   std::vector<double>&      timestamps
 ) {
   std::ifstream file(csv_path);
-  // TODO(VuHoi): check file.is_open() and throw on failure.
+  if (!file.is_open()) {
+    throw std::runtime_error("Cannot open: " + csv_path.string());
+  }
   // TODO(VuHoi): replace hardcoded 5000 with a named constant or remove.
   timestamps.reserve(5000);
   filenames.reserve(5000);
@@ -76,6 +78,9 @@ void loadStereoImages(
   std::vector<double>&      timestamps
 ) {
   std::ifstream file(csv_path);
+  if (!file.is_open()) {
+    throw std::runtime_error("Cannot open: " + csv_path.string());
+  }
   timestamps.reserve(5000);
   left_filenames.reserve(5000);
   right_filenames.reserve(5000);
@@ -110,6 +115,9 @@ void loadImu(
   std::vector<cv::Point3f>& gyro
 ) {
   std::ifstream file(imu_path);
+  if (!file.is_open()) {
+    throw std::runtime_error("Cannot open: " + imu_path.string());
+  }
   timestamps.reserve(5000);
   acc.reserve(5000);
   gyro.reserve(5000);
@@ -127,13 +135,14 @@ void loadImu(
 
     // TUM-VI IMU CSV: "timestamp_ns,gx,gy,gz,ax,ay,az" (7 comma-separated fields).
     // TODO(VuHoi): use std::istringstream or std::from_chars instead of s.erase() — current
-    //       approach is O(n^2) per line and count can overflow data[7] on malformed CSV.
+    //       approach is O(n^2) per line.
     std::string s = line;
     std::string item;
     std::size_t pos = 0;
     double      data[7];
     int         count = 0;
     while ((pos = s.find(',')) != std::string::npos) {
+      if (count >= 6) break;
       item          = s.substr(0, pos);
       data[count++] = std::stod(item);
       s.erase(0, pos + 1);

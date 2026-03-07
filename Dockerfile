@@ -224,8 +224,9 @@ FROM runtime AS evo
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3 python3-pip git                                  \
-    && pip3 install --no-cache-dir --break-system-packages evo   \
+        python3 python3-pip                                      \
+    && pip3 install --no-cache-dir --break-system-packages       \
+        evo==1.34.3                                              \
     && rm -rf /var/lib/apt/lists/*
 
 ENTRYPOINT []

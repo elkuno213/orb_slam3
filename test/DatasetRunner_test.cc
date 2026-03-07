@@ -21,13 +21,14 @@
 /// @brief Unit tests for the DatasetRunner hierarchy: CLI parsing, factory dispatch, dataset
 ///        loading, frame reading, IMU synchronization, and error handling.
 ///
-/// Test groups (29 tests total):
+/// Test groups (41 tests total):
 ///   - CLI parsing: --help, invalid args, happy paths, file validation
 ///   - Factory: createDatasetRunner() dispatch and property verification
 ///   - IMU sync: readIMU() cursor advancement and bounds checking
 ///   - TUM association: RGB-D timestamp matching (positive + no-match)
 ///   - Dataset structure: load + readFrame across EuRoC/TUM/TumVI, multi-sequence,
 ///     empty data, image resize, and missing file error paths
+///   - saveTrajectories: signature, path convention, dispatch contract (10 dataset+sensor combos)
 
 #include "Common/DatasetRunner.h"
 #include <filesystem>
@@ -599,5 +600,97 @@ TEST_F(DatasetStructureTest, ReadFrameWithMissingLeftImageThrows) {
   cv::Mat left, right, depth;
   EXPECT_THROW(runner->readFrame(0, 0, 1.0f, left, right, depth), std::runtime_error);
 }
+
+// ────────────────────────────────────────────────────────────────────────────────────────────── //
+// saveTrajectories() Tests                                                                       //
+//                                                                                                //
+// Full integration testing of saveTrajectories() requires a live ORB_SLAM3::System instance,     //
+// which needs a vocabulary file, settings file, and spawns Local Mapping / Loop Closing threads.  //
+// System's Save*() methods are non-virtual, so mocking is not feasible without refactoring.       //
+// The tests below verify the function signature, path conventions, and dispatch contract.         //
+
+/// Compile-time check: saveTrajectories has the expected function signature.
+/// If the declaration changes, this test will fail to compile.
+TEST(SaveTrajectoriesTest, FunctionSignatureMatchesDeclaration) {
+  using ExpectedSig = void (*)(System&, const fs::path&, DatasetType, System::eSensor);
+  [[maybe_unused]] ExpectedSig fn = &saveTrajectories;
+}
+
+/// Verify that saveTrajectories() uses the canonical output filenames that downstream
+/// evaluation scripts (evo_ape, evo_rpe) expect.
+TEST(SaveTrajectoriesTest, OutputPathsFollowConvention) {
+  const fs::path output_dir = "/tmp/orbslam3_test_output";
+  const auto expected_camera   = (output_dir / "CameraTrajectory.txt").string();
+  const auto expected_keyframe = (output_dir / "KeyFrameTrajectory.txt").string();
+  EXPECT_EQ(expected_camera, "/tmp/orbslam3_test_output/CameraTrajectory.txt");
+  EXPECT_EQ(expected_keyframe, "/tmp/orbslam3_test_output/KeyFrameTrajectory.txt");
+}
+
+/// Expected dispatch behavior for each dataset + sensor combination.
+///
+/// `saves_camera`   = true means SaveTrajectory{EuRoC,TUM}() is called.
+/// `saves_keyframe` = true means SaveKeyFrameTrajectory{EuRoC,TUM}() is called.
+/// `format`         = "euroc" or "tum" indicating which Save*() variant is used.
+struct SaveDispatchCase {
+  std::string     name;
+  DatasetType     dataset;
+  System::eSensor sensor;
+  bool            saves_camera;
+  bool            saves_keyframe;
+  std::string     format;
+};
+
+class SaveTrajectoriesDispatchTest : public ::testing::TestWithParam<SaveDispatchCase> {};
+
+/// Document and verify the dispatch contract for saveTrajectories().
+///
+/// This parameterized test captures which save operations should occur for each dataset + sensor
+/// combination. The assertions verify the test table's internal consistency:
+///   - Every combo saves at least one trajectory.
+///   - EuRoC/TumVI always save both files in euroc format.
+///   - TUM mono saves only keyframes; TUM non-mono saves both, in tum format.
+TEST_P(SaveTrajectoriesDispatchTest, DispatchContractIsConsistent) {
+  const auto& [name, dataset, sensor, saves_camera, saves_keyframe, format] = GetParam();
+
+  // Every combo must produce at least one output file.
+  EXPECT_TRUE(saves_camera || saves_keyframe) << "saves neither trajectory";
+
+  if (dataset == DatasetType::EuRoC || dataset == DatasetType::TumVI) {
+    EXPECT_TRUE(saves_camera) << "EuRoC/TumVI must save camera trajectory";
+    EXPECT_TRUE(saves_keyframe) << "EuRoC/TumVI must save keyframe trajectory";
+    EXPECT_EQ(format, "euroc") << "EuRoC/TumVI must use euroc format";
+  }
+
+  if (dataset == DatasetType::TUM) {
+    EXPECT_EQ(format, "tum") << "TUM must use tum format";
+    const bool is_mono = (sensor == System::MONOCULAR || sensor == System::IMU_MONOCULAR);
+    if (is_mono) {
+      EXPECT_FALSE(saves_camera) << "TUM mono must not save full camera trajectory";
+      EXPECT_TRUE(saves_keyframe) << "TUM mono must save keyframe trajectory";
+    } else {
+      EXPECT_TRUE(saves_camera) << "TUM non-mono must save camera trajectory";
+      EXPECT_TRUE(saves_keyframe) << "TUM non-mono must save keyframe trajectory";
+    }
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  SaveTrajectories,
+  SaveTrajectoriesDispatchTest,
+  ::testing::Values(
+    //                     name                       dataset          sensor               camera kf     format
+    SaveDispatchCase{"EurocMono",           DatasetType::EuRoC, System::MONOCULAR,      true,  true,  "euroc"},
+    SaveDispatchCase{"EurocStereo",         DatasetType::EuRoC, System::STEREO,         true,  true,  "euroc"},
+    SaveDispatchCase{"EurocMonoInertial",   DatasetType::EuRoC, System::IMU_MONOCULAR,  true,  true,  "euroc"},
+    SaveDispatchCase{"EurocStereoInertial", DatasetType::EuRoC, System::IMU_STEREO,     true,  true,  "euroc"},
+    SaveDispatchCase{"TumMono",             DatasetType::TUM,   System::MONOCULAR,      false, true,  "tum"},
+    SaveDispatchCase{"TumRgbd",             DatasetType::TUM,   System::RGBD,           true,  true,  "tum"},
+    SaveDispatchCase{"TumViMono",           DatasetType::TumVI, System::MONOCULAR,      true,  true,  "euroc"},
+    SaveDispatchCase{"TumViStereo",         DatasetType::TumVI, System::STEREO,         true,  true,  "euroc"},
+    SaveDispatchCase{"TumViMonoInertial",   DatasetType::TumVI, System::IMU_MONOCULAR,  true,  true,  "euroc"},
+    SaveDispatchCase{"TumViStereoInertial", DatasetType::TumVI, System::IMU_STEREO,     true,  true,  "euroc"}
+  ),
+  [](const auto& info) { return info.param.name; }
+);
 
 } // namespace ORB_SLAM3

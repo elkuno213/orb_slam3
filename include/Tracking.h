@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRACKING_H
-#define TRACKING_H
+#pragma once
 
 #include <fstream>
 #include <list>
@@ -384,4 +383,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // TRACKING_H

@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAMERAMODELS_PINHOLE_H
-#define CAMERAMODELS_PINHOLE_H
+#pragma once
 
 #include <fstream>
 #include <vector>
@@ -106,4 +105,3 @@ private:
 
 // BOOST_CLASS_EXPORT_KEY(ORBSLAM2::Pinhole)
 
-#endif // CAMERAMODELS_PINHOLE_H

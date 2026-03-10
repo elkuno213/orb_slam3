@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYFRAME_H
-#define KEYFRAME_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -530,4 +529,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // KEYFRAME_H

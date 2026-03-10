@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CAMERAMODELS_KANNALABRANDT8_H
-#define CAMERAMODELS_KANNALABRANDT8_H
+#pragma once
 
 #include <fstream>
 #include <vector>
@@ -133,4 +132,3 @@ private:
 };
 } // namespace ORB_SLAM3
 
-#endif // CAMERAMODELS_KANNALABRANDT8_H

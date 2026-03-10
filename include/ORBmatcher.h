@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ORBMATCHER_H
-#define ORBMATCHER_H
+#pragma once
 
 #include <set>
 #include <vector>
@@ -159,4 +158,3 @@ protected:
 
 } // namespace ORB_SLAM3
 
-#endif // ORBMATCHER_H

@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYFRAMEDATABASE_H
-#define KEYFRAMEDATABASE_H
+#pragma once
 
 #include <list>
 #include <mutex>
@@ -102,5 +101,3 @@ protected:
 };
 
 } // namespace ORB_SLAM3
-
-#endif

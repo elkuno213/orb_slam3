@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FRAME_H
-#define FRAME_H
+#pragma once
 
 #include <map>
 #include <memory>
@@ -414,4 +413,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // FRAME_H

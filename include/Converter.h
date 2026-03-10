@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CONVERTER_H
-#define CONVERTER_H
+#pragma once
 
 #include <Eigen/Core>
 #include <Thirdparty/g2o/g2o/types/se3quat.h>
@@ -76,4 +75,3 @@ public:
 
 } // namespace ORB_SLAM3
 
-#endif // CONVERTER_H

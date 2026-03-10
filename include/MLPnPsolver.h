@@ -47,8 +47,7 @@
  * SUCH DAMAGE.                                                               *
  ******************************************************************************/
 
-#ifndef ORB_SLAM3_MLPNPSOLVER_H
-#define ORB_SLAM3_MLPNPSOLVER_H
+#pragma once
 
 #include <vector>
 #include <Eigen/Core>
@@ -267,4 +266,3 @@ private:
 
 } // namespace ORB_SLAM3
 
-#endif // ORB_SLAM3_MLPNPSOLVER_H

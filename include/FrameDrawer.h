@@ -17,8 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FRAMEDRAWER_H
-#define FRAMEDRAWER_H
+#pragma once
 
 #include <map>
 #include <mutex>
@@ -83,4 +82,3 @@ protected:
 
 } // namespace ORB_SLAM3
 
-#endif // FRAMEDRAWER_H

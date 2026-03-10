@@ -299,7 +299,7 @@ MapPoint* MapPoint::GetReplaced() {
 }
 
 void MapPoint::Replace(MapPoint* pMP) {
-  if (pMP->mnId == this->mnId) {
+  if (pMP->mnId == mnId) {
     return;
   }
 

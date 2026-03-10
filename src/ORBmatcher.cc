@@ -237,7 +237,7 @@ float ORBmatcher::RadiusByViewingCos(const float& viewCos) {
 int ORBmatcher::SearchByBoW(KeyFrame* pKF, Frame& F, std::vector<MapPoint*>& vpMapPointMatches) {
   const std::vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
-  vpMapPointMatches = std::vector<MapPoint*>(F.N, static_cast<MapPoint*>(NULL));
+  vpMapPointMatches = std::vector<MapPoint*>(F.N, nullptr);
 
   const DBoW2::FeatureVector& vFeatVecKF = pKF->mFeatVec;
 
@@ -411,7 +411,7 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF, Frame& F, std::vector<MapPoint*>& vpM
         continue;
       }
       for (std::size_t j = 0, jend = rotHist[i].size(); j < jend; j++) {
-        vpMapPointMatches[rotHist[i][j]] = static_cast<MapPoint*>(NULL);
+        vpMapPointMatches[rotHist[i][j]] = nullptr;
         nmatches--;
       }
     }
@@ -439,7 +439,7 @@ int ORBmatcher::SearchByProjection(
 
   // Set of MapPoints already found in the KeyFrame
   std::set<MapPoint*> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-  spAlreadyFound.erase(static_cast<MapPoint*>(NULL));
+  spAlreadyFound.erase(nullptr);
 
   int nmatches = 0;
 
@@ -558,7 +558,7 @@ int ORBmatcher::SearchByProjection(
 
   // Set of MapPoints already found in the KeyFrame
   std::set<MapPoint*> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-  spAlreadyFound.erase(static_cast<MapPoint*>(NULL));
+  spAlreadyFound.erase(nullptr);
 
   int nmatches = 0;
 
@@ -792,7 +792,7 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint
   const std::vector<MapPoint*>     vpMapPoints2 = pKF2->GetMapPointMatches();
   const cv::Mat&                   Descriptors2 = pKF2->mDescriptors;
 
-  vpMatches12 = std::vector<MapPoint*>(vpMapPoints1.size(), static_cast<MapPoint*>(NULL));
+  vpMatches12 = std::vector<MapPoint*>(vpMapPoints1.size(), nullptr);
   std::vector<bool> vbMatched2(vpMapPoints2.size(), false);
 
   std::vector<int> rotHist[HISTO_LENGTH];
@@ -904,7 +904,7 @@ int ORBmatcher::SearchByBoW(KeyFrame* pKF1, KeyFrame* pKF2, std::vector<MapPoint
         continue;
       }
       for (std::size_t j = 0, jend = rotHist[i].size(); j < jend; j++) {
-        vpMatches12[rotHist[i][j]] = static_cast<MapPoint*>(NULL);
+        vpMatches12[rotHist[i][j]] = nullptr;
         nmatches--;
       }
     }
@@ -1897,7 +1897,7 @@ int ORBmatcher::SearchByProjection(
     for (int i = 0; i < HISTO_LENGTH; i++) {
       if (i != ind1 && i != ind2 && i != ind3) {
         for (std::size_t j = 0, jend = rotHist[i].size(); j < jend; j++) {
-          CurrentFrame.mvpMapPoints[rotHist[i][j]] = static_cast<MapPoint*>(NULL);
+          CurrentFrame.mvpMapPoints[rotHist[i][j]] = nullptr;
           nmatches--;
         }
       }
@@ -2025,7 +2025,7 @@ int ORBmatcher::SearchByProjection(
     for (int i = 0; i < HISTO_LENGTH; i++) {
       if (i != ind1 && i != ind2 && i != ind3) {
         for (std::size_t j = 0, jend = rotHist[i].size(); j < jend; j++) {
-          CurrentFrame.mvpMapPoints[rotHist[i][j]] = NULL;
+          CurrentFrame.mvpMapPoints[rotHist[i][j]] = nullptr;
           nmatches--;
         }
       }

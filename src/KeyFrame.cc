@@ -67,10 +67,10 @@ KeyFrame::KeyFrame()
   , mb(0)
   , mThDepth(0)
   , N(0)
-  , mvKeys(static_cast<std::vector<cv::KeyPoint>>(NULL))
-  , mvKeysUn(static_cast<std::vector<cv::KeyPoint>>(NULL))
-  , mvuRight(static_cast<std::vector<float>>(NULL))
-  , mvDepth(static_cast<std::vector<float>>(NULL))
+  , mvKeys()
+  , mvKeysUn()
+  , mvuRight()
+  , mvDepth()
   , mnScaleLevels(0)
   , mfScaleFactor(0)
   , mfLogScaleFactor(0)
@@ -81,10 +81,10 @@ KeyFrame::KeyFrame()
   , mnMinY(0)
   , mnMaxX(0)
   , mnMaxY(0)
-  , mPrevKF(static_cast<KeyFrame*>(NULL))
-  , mNextKF(static_cast<KeyFrame*>(NULL))
+  , mPrevKF(nullptr)
+  , mNextKF(nullptr)
   , mbFirstConnection(true)
-  , mpParent(NULL)
+  , mpParent(nullptr)
   , mbNotErase(false)
   , mbToBeErased(false)
   , mbBad(false)
@@ -147,15 +147,15 @@ KeyFrame::KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB)
   , mnMaxX(F.mnMaxX)
   , mnMaxY(F.mnMaxY)
   , mK_(F.mK_)
-  , mPrevKF(NULL)
-  , mNextKF(NULL)
+  , mPrevKF(nullptr)
+  , mNextKF(nullptr)
   , mpImuPreintegrated(F.mpImuPreintegrated)
   , mImuCalib(F.mImuCalib)
   , mvpMapPoints(F.mvpMapPoints)
   , mpKeyFrameDB(pKFDB)
   , mpORBvocabulary(F.mpORBvocabulary)
   , mbFirstConnection(true)
-  , mpParent(NULL)
+  , mpParent(nullptr)
   , mDistCoef(F.mDistCoef)
   , mbNotErase(false)
   , mnDataset(F.mnDataset)
@@ -407,17 +407,17 @@ void KeyFrame::AddMapPoint(MapPoint* pMP, const std::size_t& idx) {
 
 void KeyFrame::EraseMapPointMatch(const int& idx) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
-  mvpMapPoints[idx] = static_cast<MapPoint*>(NULL);
+  mvpMapPoints[idx] = nullptr;
 }
 
 void KeyFrame::EraseMapPointMatch(MapPoint* pMP) {
   std::tuple<std::size_t, std::size_t> indexes   = pMP->GetIndexInKeyFrame(this);
   std::size_t                          leftIndex = get<0>(indexes), rightIndex = get<1>(indexes);
   if (leftIndex != -1) {
-    mvpMapPoints[leftIndex] = static_cast<MapPoint*>(NULL);
+    mvpMapPoints[leftIndex] = nullptr;
   }
   if (rightIndex != -1) {
-    mvpMapPoints[rightIndex] = static_cast<MapPoint*>(NULL);
+    mvpMapPoints[rightIndex] = nullptr;
   }
 }
 
@@ -517,7 +517,7 @@ void KeyFrame::UpdateConnections(bool upParent) {
   // If the counter is greater than threshold add connection
   // In case no keyframe counter is over threshold add the one with maximum counter
   int       nmax   = 0;
-  KeyFrame* pKFmax = NULL;
+  KeyFrame* pKFmax = nullptr;
   int       th     = 15;
 
   std::vector<std::pair<int, KeyFrame*>> vPairs;
@@ -1025,7 +1025,7 @@ void KeyFrame::PostLoad(
     if (mvBackupMapPointsId[i] != -1) {
       mvpMapPoints[i] = mpMPid[mvBackupMapPointsId[i]];
     } else {
-      mvpMapPoints[i] = static_cast<MapPoint*>(NULL);
+      mvpMapPoints[i] = nullptr;
     }
   }
 

@@ -32,7 +32,7 @@ Map::Map()
   , mnBigChangeIdx(0)
   , mbImuInitialized(false)
   , mnMapChange(0)
-  , mpFirstRegionKF(static_cast<KeyFrame*>(NULL))
+  , mpFirstRegionKF(nullptr)
   , mbFail(false)
   , mIsInUse(false)
   , mHasTumbnail(false)
@@ -43,7 +43,7 @@ Map::Map()
   , mbIMU_BA2(false)
   , _logger(logging::CreateModuleLogger("Map")) {
   mnId       = nNextId++;
-  mThumbnail = static_cast<GLubyte*>(NULL);
+  mThumbnail = nullptr;
 }
 
 Map::Map(int initKFid)
@@ -54,7 +54,7 @@ Map::Map(int initKFid)
   , mHasTumbnail(false)
   , mbBad(false)
   , mbImuInitialized(false)
-  , mpFirstRegionKF(static_cast<KeyFrame*>(NULL))
+  , mpFirstRegionKF(nullptr)
   , mnMapChange(0)
   , mbFail(false)
   , mnMapChangeNotified(0)
@@ -63,7 +63,7 @@ Map::Map(int initKFid)
   , mbIMU_BA2(false)
   , _logger(logging::CreateModuleLogger("Map")) {
   mnId       = nNextId++;
-  mThumbnail = static_cast<GLubyte*>(NULL);
+  mThumbnail = nullptr;
 }
 
 Map::~Map() {
@@ -78,7 +78,7 @@ Map::~Map() {
   if (mThumbnail) {
     delete mThumbnail;
   }
-  mThumbnail = static_cast<GLubyte*>(NULL);
+  mThumbnail = nullptr;
 
   mvpReferenceMapPoints.clear();
   mvpKeyFrameOrigins.clear();
@@ -228,7 +228,7 @@ void Map::clear() {
        sit != send;
        sit++) {
     KeyFrame* pKF = *sit;
-    pKF->UpdateMap(static_cast<Map*>(NULL));
+    pKF->UpdateMap(nullptr);
     //        delete *sit;
   }
 

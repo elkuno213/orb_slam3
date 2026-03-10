@@ -18,6 +18,8 @@
  */
 
 #include "Viewer.h"
+#include <chrono>
+#include <thread>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -355,7 +357,7 @@ void Viewer::Run() {
 
     if (Stop()) {
       while (isStopped()) {
-        usleep(3000);
+        std::this_thread::sleep_for(std::chrono::microseconds(3000));
       }
     }
 

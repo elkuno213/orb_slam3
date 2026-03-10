@@ -18,6 +18,8 @@
  */
 
 #include "Atlas.h"
+#include <chrono>
+#include <thread>
 #include "KeyFrameDatabase.h"
 #include "LoggingUtils.h"
 #include "MapPoint.h"
@@ -226,7 +228,7 @@ Map* Atlas::GetCurrentMap() {
     CreateNewMap();
   }
   while (mpCurrentMap->IsBad()) {
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
 
   return mpCurrentMap;

@@ -20,6 +20,7 @@
 #include "LocalMapping.h"
 #include <chrono>
 #include <list>
+#include <thread>
 #include <map>
 #include <set>
 #include <utility>
@@ -305,7 +306,7 @@ void LocalMapping::Run() {
     } else if (Stop() && !mbBadImu) {
       // Safe area to stop
       while (isStopped() && !CheckFinish()) {
-        usleep(3000);
+        std::this_thread::sleep_for(std::chrono::microseconds(3000));
       }
       if (CheckFinish()) {
         break;
@@ -321,7 +322,7 @@ void LocalMapping::Run() {
       break;
     }
 
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
 
   SetFinish();
@@ -1092,7 +1093,7 @@ void LocalMapping::RequestReset() {
         break;
       }
     }
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
   _logger->info("Map reset completed successfully");
 }
@@ -1113,7 +1114,7 @@ void LocalMapping::RequestResetActiveMap(Map* pMap) {
         break;
       }
     }
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
   _logger->info("Active map reset completed successfully");
 }

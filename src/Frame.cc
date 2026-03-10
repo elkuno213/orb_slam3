@@ -121,8 +121,8 @@ Frame::Frame(const Frame& frame)
   , mTcw(frame.mTcw)
   , mbHasPose(false)
   , mbHasVelocity(false) {
-  for (int i = 0; i < FRAME_GRID_COLS; i++) {
-    for (int j = 0; j < FRAME_GRID_ROWS; j++) {
+  for (int i = 0; i < kFrameGridCols; i++) {
+    for (int j = 0; j < kFrameGridRows; j++) {
       mGrid[i][j] = frame.mGrid[i][j];
       if (frame.Nleft > 0) {
         mGridRight[i][j] = frame.mGridRight[i][j];
@@ -241,8 +241,8 @@ Frame::Frame(
   if (mbInitialComputations) {
     ComputeImageBounds(imLeft);
 
-    mfGridElementWidthInv  = static_cast<float>(FRAME_GRID_COLS) / (mnMaxX - mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) / (mnMaxY - mnMinY);
+    mfGridElementWidthInv  = static_cast<float>(kFrameGridCols) / (mnMaxX - mnMinX);
+    mfGridElementHeightInv = static_cast<float>(kFrameGridRows) / (mnMaxY - mnMinY);
 
     fx    = K.at<float>(0, 0);
     fy    = K.at<float>(1, 1);
@@ -361,9 +361,9 @@ Frame::Frame(
     ComputeImageBounds(imGray);
 
     mfGridElementWidthInv
-      = static_cast<float>(FRAME_GRID_COLS) / static_cast<float>(mnMaxX - mnMinX);
+      = static_cast<float>(kFrameGridCols) / static_cast<float>(mnMaxX - mnMinX);
     mfGridElementHeightInv
-      = static_cast<float>(FRAME_GRID_ROWS) / static_cast<float>(mnMaxY - mnMinY);
+      = static_cast<float>(kFrameGridRows) / static_cast<float>(mnMaxY - mnMinY);
 
     fx    = K.at<float>(0, 0);
     fy    = K.at<float>(1, 1);
@@ -483,9 +483,9 @@ Frame::Frame(
     ComputeImageBounds(imGray);
 
     mfGridElementWidthInv
-      = static_cast<float>(FRAME_GRID_COLS) / static_cast<float>(mnMaxX - mnMinX);
+      = static_cast<float>(kFrameGridCols) / static_cast<float>(mnMaxX - mnMinX);
     mfGridElementHeightInv
-      = static_cast<float>(FRAME_GRID_ROWS) / static_cast<float>(mnMaxY - mnMinY);
+      = static_cast<float>(kFrameGridRows) / static_cast<float>(mnMaxY - mnMinY);
 
     fx    = static_cast<Pinhole*>(mpCamera)->toK().at<float>(0, 0);
     fy    = static_cast<Pinhole*>(mpCamera)->toK().at<float>(1, 1);
@@ -523,12 +523,12 @@ Frame::Frame(
 
 void Frame::AssignFeaturesToGrid() {
   // Fill matrix with points
-  const int nCells = FRAME_GRID_COLS * FRAME_GRID_ROWS;
+  const int nCells = kFrameGridCols * kFrameGridRows;
 
   int nReserve = 0.5f * N / (nCells);
 
-  for (unsigned int i = 0; i < FRAME_GRID_COLS; i++) {
-    for (unsigned int j = 0; j < FRAME_GRID_ROWS; j++) {
+  for (unsigned int i = 0; i < kFrameGridCols; i++) {
+    for (unsigned int j = 0; j < kFrameGridRows; j++) {
       mGrid[i][j].reserve(nReserve);
       if (Nleft != -1) {
         mGridRight[i][j].reserve(nReserve);
@@ -801,12 +801,12 @@ std::vector<std::size_t> Frame::GetFeaturesInArea(
 
   const int nMinCellX
     = std::max(0, (int)std::floor((x - mnMinX - factorX) * mfGridElementWidthInv));
-  if (nMinCellX >= FRAME_GRID_COLS) {
+  if (nMinCellX >= kFrameGridCols) {
     return vIndices;
   }
 
   const int nMaxCellX = std::min(
-    (int)FRAME_GRID_COLS - 1,
+    (int)kFrameGridCols - 1,
     (int)std::ceil((x - mnMinX + factorX) * mfGridElementWidthInv)
   );
   if (nMaxCellX < 0) {
@@ -815,12 +815,12 @@ std::vector<std::size_t> Frame::GetFeaturesInArea(
 
   const int nMinCellY
     = std::max(0, (int)std::floor((y - mnMinY - factorY) * mfGridElementHeightInv));
-  if (nMinCellY >= FRAME_GRID_ROWS) {
+  if (nMinCellY >= kFrameGridRows) {
     return vIndices;
   }
 
   const int nMaxCellY = std::min(
-    (int)FRAME_GRID_ROWS - 1,
+    (int)kFrameGridRows - 1,
     (int)std::ceil((y - mnMinY + factorY) * mfGridElementHeightInv)
   );
   if (nMaxCellY < 0) {
@@ -869,7 +869,7 @@ bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
   posY = std::round((kp.pt.y - mnMinY) * mfGridElementHeightInv);
 
   // Keypoint's coordinates are undistorted, which could cause to go out of the image
-  if (posX < 0 || posX >= FRAME_GRID_COLS || posY < 0 || posY >= FRAME_GRID_ROWS) {
+  if (posX < 0 || posX >= kFrameGridCols || posY < 0 || posY >= kFrameGridRows) {
     return false;
   }
 
@@ -1254,8 +1254,8 @@ Frame::Frame(
   if (mbInitialComputations) {
     ComputeImageBounds(imLeft);
 
-    mfGridElementWidthInv  = static_cast<float>(FRAME_GRID_COLS) / (mnMaxX - mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS) / (mnMaxY - mnMinY);
+    mfGridElementWidthInv  = static_cast<float>(kFrameGridCols) / (mnMaxX - mnMinX);
+    mfGridElementHeightInv = static_cast<float>(kFrameGridRows) / (mnMaxY - mnMinY);
 
     fx    = K.at<float>(0, 0);
     fy    = K.at<float>(1, 1);

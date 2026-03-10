@@ -1559,9 +1559,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   MD5_Final(c, &md5Context);
 
   for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-    char aux[10];
-    std::sprintf(aux, "%02x", c[i]);
-    checksum = checksum + aux;
+    checksum += fmt::format("{:02x}", c[i]);
   }
 
   return checksum;

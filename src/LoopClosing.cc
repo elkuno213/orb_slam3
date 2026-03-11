@@ -2222,7 +2222,7 @@ void LoopClosing::SearchAndFuse(
     Sophus::SE3f  Tcw          = pKF->GetPose();
     Sophus::Sim3f Scw(Tcw.unit_quaternion(), Tcw.translation());
     Scw.setScale(1.f);
-    // TODO(VuHoi): assert Scw.rotationMatrix() = Tcw.rotationMatrix()
+    // TODO(elkuno213): assert Scw.rotationMatrix() = Tcw.rotationMatrix()
     //              Scw.translation()    = Tcw.translation()
     //              Scw.scale()          = 1
     std::vector<MapPoint*> vpReplacePoints(vpMapPoints.size(), static_cast<MapPoint*>(NULL));

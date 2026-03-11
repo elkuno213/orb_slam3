@@ -172,6 +172,6 @@ TEST_F(TrackingTest, ConstructorInvalidFile) {
   );
 }
 
-// TODO(VuHoi): bug in Atlas::AddCamera, correct it and add this test.
+// TODO(elkuno213): bug in Atlas::AddCamera, correct it and add this test.
 // TEST_F(TrackingTest, ConstructorValidFile) {
 // }

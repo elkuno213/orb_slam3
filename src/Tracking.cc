@@ -1697,7 +1697,7 @@ void Tracking::PreintegrateIMU() {
     if (!mpImuPreintegratedFromLastKF) {
       _logger->warn("IMU preintegration from last key frame is missing");
     }
-    // TODO(VuHoi): maybe skip the following line if mpImuPreintegratedFromLastKF is nullptr
+    // TODO(elkuno213): maybe skip the following line if mpImuPreintegratedFromLastKF is nullptr
     mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc, angVel, tstep);
     pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc, angVel, tstep);
   }
@@ -1788,7 +1788,7 @@ void Tracking::Track() {
   Map* pCurrentMap = mpAtlas->GetCurrentMap();
   if (!pCurrentMap) {
     _logger->warn("No active map found in the atlas");
-    // TODO(VuHoi): consider return here
+    // TODO(elkuno213): consider return here
   }
 
   if (mState != NO_IMAGES_YET) {

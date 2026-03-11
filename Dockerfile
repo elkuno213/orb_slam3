@@ -209,8 +209,8 @@ COPY --from=builder /runtime/bin/ /usr/local/bin/
 # ORB vocabulary
 COPY --from=builder /orb-slam3/Vocabulary/ORBvoc.txt Vocabulary/ORBvoc.txt
 
-# Example configuration and calibration files (executables are in /usr/local/bin/)
-COPY --from=builder /orb-slam3/Examples/ Examples/
+# YAML configuration files per sensor mode (executables are in /usr/local/bin/)
+COPY --from=builder /orb-slam3/configs/ configs/
 
 RUN ldconfig
 

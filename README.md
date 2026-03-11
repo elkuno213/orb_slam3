@@ -51,14 +51,14 @@ docker compose run --rm orb-slam3
 orb_slam3_offline \
   --dataset euroc --sensor stereo --inertial \
   --vocabulary-file Vocabulary/ORBvoc.txt \
-  --settings-file Examples/Stereo-Inertial/EuRoC.yaml \
+  --settings-file configs/stereo-inertial/EuRoC.yaml \
   --data /datasets/euroc/MH_01_easy
 
 # Example — RGB-D on TUM fr2:
 orb_slam3_offline \
   --dataset tum --sensor rgbd \
   --vocabulary-file Vocabulary/ORBvoc.txt \
-  --settings-file Examples/RGB-D/TUM2.yaml \
+  --settings-file configs/rgb-d/TUM2.yaml \
   --data /datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_large_with_loop
 
 xhost -local:docker

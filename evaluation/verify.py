@@ -104,7 +104,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg1_room/groundtruth.txt",
         gt_format="tum",
         alignment="se3",
-        settings_file="Examples/RGB-D/TUM1.yaml",
+        settings_file="configs/rgb-d/TUM1.yaml",
         command_args=[
             "--data",
             "/datasets/tum-rgbd-slam/rgbd_dataset_freiburg1_room",
@@ -119,7 +119,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg2_pioneer_slam/groundtruth.txt",
         gt_format="tum",
         alignment="se3",
-        settings_file="Examples/RGB-D/TUM2.yaml",
+        settings_file="configs/rgb-d/TUM2.yaml",
         command_args=[
             "--data",
             "/datasets/tum-rgbd-slam/rgbd_dataset_freiburg2_pioneer_slam",
@@ -135,7 +135,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path="tum-rgbd-slam/rgbd_dataset_freiburg1_room/groundtruth.txt",
         gt_format="tum",
         alignment="sim3",
-        settings_file="Examples/Monocular/TUM1.yaml",
+        settings_file="configs/monocular/TUM1.yaml",
         trajectory_filename="KeyFrameTrajectory.txt",
         command_args=[
             "--data",
@@ -151,7 +151,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="sim3",
-        settings_file="Examples/Monocular/EuRoC.yaml",
+        settings_file="configs/monocular/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_01,
@@ -167,7 +167,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_TUMVI_GT_PATH,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Monocular-Inertial/TUM-VI.yaml",
+        settings_file="configs/monocular-inertial/TUM-VI.yaml",
         command_args=[
             "--data",
             f"/datasets/{_TUMVI_BASE}",
@@ -182,7 +182,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Monocular-Inertial/EuRoC.yaml",
+        settings_file="configs/monocular-inertial/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_01,
@@ -198,7 +198,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Stereo/EuRoC.yaml",
+        settings_file="configs/stereo/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_01,
@@ -213,7 +213,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_02_GT,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Stereo/EuRoC.yaml",
+        settings_file="configs/stereo/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_02,
@@ -229,7 +229,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_01_GT,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Stereo-Inertial/EuRoC.yaml",
+        settings_file="configs/stereo-inertial/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_01,
@@ -244,7 +244,7 @@ TEST_CONFIGS: Final[dict[str, TestConfig]] = {
         gt_path=_EUROC_V1_02_GT,
         gt_format="euroc",
         alignment="se3",
-        settings_file="Examples/Stereo-Inertial/EuRoC.yaml",
+        settings_file="configs/stereo-inertial/EuRoC.yaml",
         command_args=[
             "--data",
             _EUROC_V1_02,

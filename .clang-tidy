@@ -1,0 +1,44 @@
+---
+# ORB-SLAM3 clang-tidy configuration
+#
+# Check configuration lives here — CMake controls only whether clang-tidy
+# runs (ENABLE_CLANG_TIDY) and error policy (CLANG_TIDY_WARNINGS_AS_ERRORS).
+# clangd reads this file automatically via --clang-tidy.
+#
+# Naming checks disabled — deferred to Phase 8.
+
+Checks: >
+  -*,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-avoid-c-arrays,
+  performance-*,
+  readability-*,
+  -readability-identifier-naming,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  -readability-else-after-return,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-narrowing-conversions,
+  concurrency-*,
+  misc-const-correctness,
+  misc-unused-parameters,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-slicing
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: 'include/.*\.h$'
+
+FormatStyle: file
+
+CheckOptions:
+  - key: modernize-use-nullptr.NullMacros
+    value: 'NULL'
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: '1'
+  - key: readability-implicit-bool-conversion.AllowPointerConditions
+    value: true
+  - key: readability-implicit-bool-conversion.AllowIntegerConditions
+    value: true

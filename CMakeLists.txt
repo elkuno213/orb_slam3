@@ -15,6 +15,40 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────── #
+# Build options                                                                                    #
+
+option(ENABLE_ASAN "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
+option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+
+if(ENABLE_ASAN AND ENABLE_TSAN)
+  message(FATAL_ERROR "ENABLE_ASAN and ENABLE_TSAN are mutually exclusive")
+endif()
+
+if(ENABLE_ASAN)
+  add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=address,undefined)
+endif()
+
+if(ENABLE_TSAN)
+  add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
+  add_link_options(-fsanitize=thread)
+endif()
+
+option(ENABLE_CLANG_TIDY "Enable clang-tidy static analysis" OFF)
+option(CLANG_TIDY_WARNINGS_AS_ERRORS "Treat clang-tidy diagnostics as errors" OFF)
+
+if(ENABLE_CLANG_TIDY)
+  find_program(CLANG_TIDY_EXE NAMES clang-tidy REQUIRED)
+  set(_clang_tidy_cmd "${CLANG_TIDY_EXE}")
+  if(CLANG_TIDY_WARNINGS_AS_ERRORS)
+    list(APPEND _clang_tidy_cmd "--warnings-as-errors=*")
+  endif()
+  set(CMAKE_CXX_CLANG_TIDY "${_clang_tidy_cmd}")
+  message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}"
+                 " (warnings-as-errors: ${CLANG_TIDY_WARNINGS_AS_ERRORS})")
+endif()
+
+# ──────────────────────────────────────────────────────────────────────────────────────────────── #
 # Dependencies #
 
 find_package(OpenCV 4.4 REQUIRED)

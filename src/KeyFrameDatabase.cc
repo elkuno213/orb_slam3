@@ -18,7 +18,7 @@
  */
 
 #include "KeyFrameDatabase.h"
-#include <Thirdparty/DBoW2/DBoW2/BowVector.h>
+#include <DBoW2/BowVector.h>
 #include "Frame.h"
 #include "KeyFrame.h"
 #include "Map.h"

@@ -23,14 +23,14 @@
 #include <mutex>
 #include <tuple>
 #include <utility>
-#include <Thirdparty/g2o/g2o/core/block_solver.h>
-#include <Thirdparty/g2o/g2o/core/optimization_algorithm_gauss_newton.h>
-#include <Thirdparty/g2o/g2o/core/optimization_algorithm_levenberg.h>
-#include <Thirdparty/g2o/g2o/core/robust_kernel_impl.h>
-#include <Thirdparty/g2o/g2o/core/sparse_optimizer.h>
-#include <Thirdparty/g2o/g2o/solvers/linear_solver_dense.h>
-#include <Thirdparty/g2o/g2o/solvers/linear_solver_eigen.h>
-#include <Thirdparty/g2o/g2o/types/types_seven_dof_expmap.h>
+#include <g2o/core/block_solver.h>
+#include <g2o/core/optimization_algorithm_gauss_newton.h>
+#include <g2o/core/optimization_algorithm_levenberg.h>
+#include <g2o/core/robust_kernel_impl.h>
+#include <g2o/core/sparse_optimizer.h>
+#include <g2o/solvers/linear_solver_dense.h>
+#include <g2o/solvers/linear_solver_eigen.h>
+#include <g2o/types/types_seven_dof_expmap.h>
 #include "Frame.h"
 #include "G2oTypes.h"
 #include "KeyFrame.h"
@@ -229,7 +229,7 @@ void Optimizer::BundleAdjustment(
       if (pKF->mpCamera2) {
         int rightIndex = std::get<1>(mit->second);
 
-        if (rightIndex != -1 && rightIndex < pKF->mvKeysRight.size()) {
+        if (rightIndex != -1 && rightIndex < static_cast<int>(pKF->mvKeysRight.size())) {
           rightIndex -= pKF->NLeft;
 
           Eigen::Matrix<double, 2, 1> obs;
@@ -411,7 +411,7 @@ void Optimizer::FullInertialBA(
   int nNonFixed = 0;
 
   // Set KeyFrame vertices
-  KeyFrame* pIncKF;
+  KeyFrame* pIncKF = nullptr;
   for (std::size_t i = 0; i < vpKFs.size(); i++) {
     KeyFrame* pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) {
@@ -666,7 +666,7 @@ void Optimizer::FullInertialBA(
         if (pKFi->mpCamera2) { // Monocular right observation
           int rightIndex = std::get<1>(mit->second);
 
-          if (rightIndex != -1 && rightIndex < pKFi->mvKeysRight.size()) {
+          if (rightIndex != -1 && rightIndex < static_cast<int>(pKFi->mvKeysRight.size())) {
             rightIndex -= pKFi->NLeft;
 
             Eigen::Matrix<double, 2, 1> obs;
@@ -2495,7 +2495,7 @@ void Optimizer::LocalInertialBA(
     }
   }
 
-  bool bNonFixed = (lFixedKeyFrames.size() == 0);
+  [[maybe_unused]] bool bNonFixed = (lFixedKeyFrames.size() == 0);
 
   // Setup optimizer
   g2o::SparseOptimizer                 optimizer;
@@ -3197,7 +3197,7 @@ void Optimizer::InertialOptimization(
   Rwg = VGDir->estimate().Rwg;
 
   // Keyframes velocities and biases
-  const int N = vpKFs.size();
+  const std::size_t N = vpKFs.size();
   for (std::size_t i = 0; i < N; i++) {
     KeyFrame* pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) {
@@ -3354,7 +3354,7 @@ void Optimizer::InertialOptimization(
   IMU::Bias b(vb[3], vb[4], vb[5], vb[0], vb[1], vb[2]);
 
   // Keyframes velocities and biases
-  const int N = vpKFs.size();
+  const std::size_t N = vpKFs.size();
   for (std::size_t i = 0; i < N; i++) {
     KeyFrame* pKFi = vpKFs[i];
     if (pKFi->mnId > maxKFid) {
@@ -3472,10 +3472,10 @@ void Optimizer::InertialOptimization(Map* pMap, Eigen::Matrix3d& Rwg, double& sc
   optimizer.setVerbose(false);
   optimizer.initializeOptimization();
   optimizer.computeActiveErrors();
-  float err = optimizer.activeRobustChi2();
+  optimizer.activeRobustChi2();
   optimizer.optimize(its);
   optimizer.computeActiveErrors();
-  float err_end = optimizer.activeRobustChi2();
+  optimizer.activeRobustChi2();
   // Recover optimized data
   scale = VS->estimate();
   Rwg   = VGDir->estimate().Rwg;
@@ -3487,8 +3487,6 @@ void Optimizer::LocalBundleAdjustment(
   std::vector<KeyFrame*> vpFixedKF,
   bool*                  pbStopFlag
 ) {
-  bool bShowImages = false;
-
   std::vector<MapPoint*> vpMPs;
 
   g2o::SparseOptimizer                    optimizer;
@@ -5243,8 +5241,6 @@ void Optimizer::OptimizeEssentialGraph4DoF(
   const LoopClosing::KeyFrameAndPose&             CorrectedSim3,
   const std::map<KeyFrame*, std::set<KeyFrame*>>& LoopConnections
 ) {
-  typedef g2o::BlockSolver<g2o::BlockSolverTraits<4, 4>> BlockSolver_4_4;
-
   // Setup optimizer
   g2o::SparseOptimizer optimizer;
   optimizer.setVerbose(false);
@@ -5313,7 +5309,6 @@ void Optimizer::OptimizeEssentialGraph4DoF(
   matLambda(0, 0)                       = 1e3;
 
   // Set Loop edges
-  Edge4DoF* e_loop;
   for (std::map<KeyFrame*, std::set<KeyFrame*>>::const_iterator mit  = LoopConnections.begin(),
                                                                 mend = LoopConnections.end();
        mit != mend;
@@ -5344,7 +5339,6 @@ void Optimizer::OptimizeEssentialGraph4DoF(
       e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(nIDi)));
 
       e->information() = matLambda;
-      e_loop           = e;
       optimizer.addEdge(e);
 
       sInsertedEdges.insert(std::make_pair(std::min(nIDi, nIDj), std::max(nIDi, nIDj)));

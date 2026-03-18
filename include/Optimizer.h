@@ -23,7 +23,7 @@
 #include <set>
 #include <vector>
 #include <Eigen/Core>
-#include <Thirdparty/g2o/g2o/types/sim3.h>
+#include <g2o/types/sim3.h>
 #include "LoopClosing.h"
 
 namespace ORB_SLAM3 {

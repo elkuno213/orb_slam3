@@ -20,8 +20,8 @@
 #pragma once
 
 #include <Eigen/Core>
-#include <Thirdparty/g2o/g2o/types/se3quat.h>
-#include <Thirdparty/g2o/g2o/types/sim3.h>
+#include <g2o/types/se3quat.h>
+#include <g2o/types/sim3.h>
 #include <opencv2/core.hpp>
 #include <sophus/geometry.hpp>
 #include <sophus/sim3.hpp>

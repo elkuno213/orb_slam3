@@ -29,7 +29,7 @@
 #include <thread>
 #include <utility>
 #include <vector>
-#include <Thirdparty/g2o/g2o/types/sim3.h>
+#include <g2o/types/sim3.h>
 #include <opencv2/core.hpp>
 #include <spdlog/logger.h>
 #include "ORBVocabulary.h"

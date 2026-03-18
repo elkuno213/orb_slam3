@@ -19,7 +19,7 @@
 
 #include "ORBmatcher.h"
 #include <utility>
-#include <Thirdparty/DBoW2/DBoW2/FeatureVector.h>
+#include <DBoW2/FeatureVector.h>
 #include "Frame.h"
 #include "GeometricCamera.h"
 #include "KeyFrame.h"

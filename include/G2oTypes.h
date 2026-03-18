@@ -22,11 +22,11 @@
 #include <fstream>
 #include <vector>
 #include <Eigen/Core>
-#include <Thirdparty/g2o/g2o/core/base_binary_edge.h>
-#include <Thirdparty/g2o/g2o/core/base_multi_edge.h>
-#include <Thirdparty/g2o/g2o/core/base_unary_edge.h>
-#include <Thirdparty/g2o/g2o/core/base_vertex.h>
-#include <Thirdparty/g2o/g2o/types/types_sba.h>
+#include <g2o/core/base_binary_edge.h>
+#include <g2o/core/base_multi_edge.h>
+#include <g2o/core/base_unary_edge.h>
+#include <g2o/core/base_vertex.h>
+#include <g2o/types/types_sba.h>
 #include "ImuTypes.h"
 
 namespace ORB_SLAM3 {
@@ -270,9 +270,9 @@ public:
 class GDirection {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  GDirection() {
+  GDirection() : its(0) {
   }
-  GDirection(Eigen::Matrix3d pRwg) : Rwg(pRwg) {
+  GDirection(Eigen::Matrix3d pRwg) : Rwg(pRwg), its(0) {
   }
 
   void Update(const double* pu) {

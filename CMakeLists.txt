@@ -145,7 +145,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS OFF)
 
 target_include_directories(${PROJECT_NAME}
   PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/CameraModels>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -154,6 +153,8 @@ target_include_directories(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} SYSTEM
   PUBLIC
     ${Pangolin_INCLUDE_DIRS}
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Thirdparty/g2o>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2>
 )
 
 target_compile_options(${PROJECT_NAME}

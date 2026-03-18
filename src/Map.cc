@@ -28,16 +28,16 @@ namespace ORB_SLAM3 {
 long unsigned int Map::nNextId = 0;
 
 Map::Map()
-  : mnMaxKFid(0)
-  , mnBigChangeIdx(0)
+  : mpFirstRegionKF(nullptr)
+  , mbFail(false)
   , mbImuInitialized(false)
   , mnMapChange(0)
-  , mpFirstRegionKF(nullptr)
-  , mbFail(false)
+  , mnMapChangeNotified(0)
+  , mnMaxKFid(0)
+  , mnBigChangeIdx(0)
   , mIsInUse(false)
   , mHasTumbnail(false)
   , mbBad(false)
-  , mnMapChangeNotified(0)
   , mbIsInertial(false)
   , mbIMU_BA1(false)
   , mbIMU_BA2(false)
@@ -47,17 +47,17 @@ Map::Map()
 }
 
 Map::Map(int initKFid)
-  : mnInitKFid(initKFid)
+  : mpFirstRegionKF(nullptr)
+  , mbFail(false)
+  , mbImuInitialized(false)
+  , mnMapChange(0)
+  , mnMapChangeNotified(0)
+  , mnInitKFid(initKFid)
   , mnMaxKFid(initKFid)
-  , /*mnLastLoopKFid(initKFid),*/ mnBigChangeIdx(0)
+  , mnBigChangeIdx(0)
   , mIsInUse(false)
   , mHasTumbnail(false)
   , mbBad(false)
-  , mbImuInitialized(false)
-  , mpFirstRegionKF(nullptr)
-  , mnMapChange(0)
-  , mbFail(false)
-  , mnMapChangeNotified(0)
   , mbIsInertial(false)
   , mbIMU_BA1(false)
   , mbIMU_BA2(false)
@@ -472,17 +472,17 @@ void Map::PostLoad(
     pKFDB->add(pKFi);
   }
 
-  if (mnBackupKFinitialID != -1) {
+  if (mnBackupKFinitialID != static_cast<unsigned long int>(-1)) {
     mpKFinitial = mpKeyFrameId[mnBackupKFinitialID];
   }
 
-  if (mnBackupKFlowerID != -1) {
+  if (mnBackupKFlowerID != static_cast<unsigned long int>(-1)) {
     mpKFlowerID = mpKeyFrameId[mnBackupKFlowerID];
   }
 
   mvpKeyFrameOrigins.clear();
   mvpKeyFrameOrigins.reserve(mvBackupKeyFrameOriginsId.size());
-  for (int i = 0; i < mvBackupKeyFrameOriginsId.size(); ++i) {
+  for (std::size_t i = 0; i < mvBackupKeyFrameOriginsId.size(); ++i) {
     mvpKeyFrameOrigins.push_back(mpKeyFrameId[mvBackupKeyFrameOriginsId[i]]);
   }
 

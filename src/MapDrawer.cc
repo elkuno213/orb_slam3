@@ -174,7 +174,7 @@ void MapDrawer::DrawKeyFrames(
     for (std::size_t i = 0; i < vpKFs.size(); i++) {
       KeyFrame*       pKF         = vpKFs[i];
       Eigen::Matrix4f Twc         = pKF->GetPoseInverse().matrix();
-      unsigned int    index_color = pKF->mnOriginMapId;
+      [[maybe_unused]] unsigned int index_color = pKF->mnOriginMapId;
 
       glPushMatrix();
 
@@ -308,7 +308,7 @@ void MapDrawer::DrawKeyFrames(
       for (std::size_t i = 0; i < vpKFs.size(); i++) {
         KeyFrame*       pKF         = vpKFs[i];
         Eigen::Matrix4f Twc         = pKF->GetPoseInverse().matrix();
-        unsigned int    index_color = pKF->mnOriginMapId;
+        [[maybe_unused]] unsigned int index_color = pKF->mnOriginMapId;
 
         glPushMatrix();
 

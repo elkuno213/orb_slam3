@@ -249,9 +249,9 @@ void ImuCamPose::UpdateW(const double* pu) {
 }
 
 InvDepthPoint::InvDepthPoint(double _rho, double _u, double _v, KeyFrame* pHostKF)
-  : u(_u)
+  : rho(_rho)
+  , u(_u)
   , v(_v)
-  , rho(_rho)
   , fx(pHostKF->fx)
   , fy(pHostKF->fy)
   , cx(pHostKF->cx)

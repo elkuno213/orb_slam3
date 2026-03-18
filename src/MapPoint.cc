@@ -62,6 +62,7 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, KeyFrame* pRefKF, Map* pMap)
   , mnCorrectedByKF(0)
   , mnCorrectedReference(0)
   , mnBAGlobalForKF(0)
+  , mnOriginMapId(pMap->GetId())
   , mpRefKF(pRefKF)
   , mnVisible(1)
   , mnFound(1)
@@ -70,7 +71,6 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, KeyFrame* pRefKF, Map* pMap)
   , mfMinDistance(0)
   , mfMaxDistance(0)
   , mpMap(pMap)
-  , mnOriginMapId(pMap->GetId())
   , _logger(logging::CreateModuleLogger("MapPoint")) {
   SetWorldPos(Pos);
 
@@ -98,6 +98,7 @@ MapPoint::MapPoint(
   , mnCorrectedByKF(0)
   , mnCorrectedReference(0)
   , mnBAGlobalForKF(0)
+  , mnOriginMapId(pMap->GetId())
   , mpRefKF(pRefKF)
   , mnVisible(1)
   , mnFound(1)
@@ -106,7 +107,6 @@ MapPoint::MapPoint(
   , mfMinDistance(0)
   , mfMaxDistance(0)
   , mpMap(pMap)
-  , mnOriginMapId(pMap->GetId())
   , _logger(logging::CreateModuleLogger("MapPoint")) {
   mInvDepth = invDepth;
   mInitU    = (double)uv_init.x;
@@ -133,13 +133,13 @@ MapPoint::MapPoint(const Eigen::Vector3f& Pos, Map* pMap, Frame* pFrame, const i
   , mnCorrectedByKF(0)
   , mnCorrectedReference(0)
   , mnBAGlobalForKF(0)
+  , mnOriginMapId(pMap->GetId())
   , mpRefKF(nullptr)
   , mnVisible(1)
   , mnFound(1)
   , mbBad(false)
   , mpReplaced(nullptr)
   , mpMap(pMap)
-  , mnOriginMapId(pMap->GetId())
   , _logger(logging::CreateModuleLogger("MapPoint")) {
   SetWorldPos(Pos);
 

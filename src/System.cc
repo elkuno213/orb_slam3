@@ -120,7 +120,7 @@ System::System(
 
   mStrVocabularyFilePath = strVocFile;
 
-  bool loadedAtlas = false;
+  [[maybe_unused]] bool loadedAtlas = false;
 
   if (mStrLoadAtlasFromFile.empty()) {
     // Load ORB Vocabulary
@@ -730,8 +730,8 @@ void System::SaveTrajectoryEuRoC(const std::string& filename) {
   _logger->info("Saving trajectory to {}...", filename);
 
   std::vector<Map*> vpMaps    = mpAtlas->GetAllMaps();
-  int               numMaxKFs = 0;
-  Map*              pBiggerMap;
+  std::size_t       numMaxKFs = 0;
+  Map*              pBiggerMap = nullptr;
 
   _logger->info("There are {} maps in the atlas", vpMaps.size());
   for (Map* pMap : vpMaps) {
@@ -831,8 +831,6 @@ void System::SaveTrajectoryEuRoC(const std::string& filename, Map* pMap) {
 
   _logger->info("Saving trajectory of map {} to {}...", pMap->GetId(), filename);
 
-  int numMaxKFs = 0;
-
   std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
   std::sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
 
@@ -923,8 +921,8 @@ void System::SaveTrajectoryEuRoC(const std::string& filename, Map* pMap) {
     }
 
     std::vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-    Map* pBiggerMap;
-    int numMaxKFs = 0;
+    Map* pBiggerMap = nullptr;
+    std::size_t numMaxKFs = 0;
     for(Map* pMap :vpMaps)
     {
         if(pMap->GetAllKeyFrames().size() > numMaxKFs)
@@ -1042,8 +1040,8 @@ keyframe. if (!pKF) continue;
     std::cout << std::endl << "Saving keyframe trajectory to " << filename << " ..." << std::endl;
 
     std::vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-    Map* pBiggerMap;
-    int numMaxKFs = 0;
+    Map* pBiggerMap = nullptr;
+    std::size_t numMaxKFs = 0;
     for(Map* pMap :vpMaps)
     {
         if(pMap->GetAllKeyFrames().size() > numMaxKFs)
@@ -1098,8 +1096,8 @@ void System::SaveKeyFrameTrajectoryEuRoC(const std::string& filename) {
   _logger->info("Saving keyframe trajectory to {}...", filename);
 
   std::vector<Map*> vpMaps = mpAtlas->GetAllMaps();
-  Map*              pBiggerMap;
-  int               numMaxKFs = 0;
+  Map*              pBiggerMap = nullptr;
+  std::size_t       numMaxKFs = 0;
   for (Map* pMap : vpMaps) {
     if (pMap && pMap->GetAllKeyFrames().size() > numMaxKFs) {
       numMaxKFs  = pMap->GetAllKeyFrames().size();
@@ -1549,6 +1547,9 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   MD5_CTX md5Context;
   char    buffer[1024];
 
+// TODO(elkuno213): Migrate to EVP API when dropping OpenSSL < 3.0 support
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   MD5_Init(&md5Context);
   while (int count = f.readsome(buffer, sizeof(buffer))) {
     MD5_Update(&md5Context, buffer, count);
@@ -1557,6 +1558,7 @@ std::string System::CalculateCheckSum(std::string filename, int type) {
   f.close();
 
   MD5_Final(c, &md5Context);
+#pragma GCC diagnostic pop
 
   for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
     checksum += fmt::format("{:02x}", c[i]);

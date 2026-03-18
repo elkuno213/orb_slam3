@@ -1,33 +1,74 @@
 ---
 # ORB-SLAM3 clang-tidy configuration
 #
-# Check configuration lives here — CMake controls only whether clang-tidy
-# runs (ENABLE_CLANG_TIDY) and error policy (CLANG_TIDY_WARNINGS_AS_ERRORS).
-# clangd reads this file automatically via --clang-tidy.
+# Incremental approach: start with NO checks enabled. Each modernization phase
+# adds checks AFTER fixing all warnings, then promotes them to WarningsAsErrors.
+# This keeps the build green at every step.
 #
-# Naming checks disabled — deferred to Phase 8.
+# See docs/source/system-status.md for the modernization roadmap.
+#
+# Permanent suppressions (never enabled):
+#   readability-identifier-length       — SLAM math uses short names legitimately
+#   readability-identifier-naming       — deferred to optional Phase 11
+#   readability-magic-numbers           — too noisy for math-heavy code
+#   readability-function-cognitive-complexity — legacy functions, not fixable without rewrite
+#   readability-else-after-return       — style preference, not a defect
+#   modernize-use-trailing-return-type  — style preference
+#   modernize-avoid-c-arrays            — used in serialization/legacy APIs
+#   bugprone-easily-swappable-parameters — too noisy for SLAM APIs
+#   bugprone-narrowing-conversions      — overlaps with compiler warnings
 
 Checks: >
   -*,
-  modernize-*,
-  -modernize-use-trailing-return-type,
-  -modernize-avoid-c-arrays,
-  performance-*,
-  readability-*,
-  -readability-identifier-naming,
-  -readability-magic-numbers,
-  -readability-function-cognitive-complexity,
-  -readability-else-after-return,
-  bugprone-*,
-  -bugprone-easily-swappable-parameters,
-  -bugprone-narrowing-conversions,
-  concurrency-*,
-  misc-const-correctness,
+  modernize-use-override,
+  modernize-use-using,
+  modernize-use-equals-default,
+  modernize-use-emplace,
+  modernize-use-bool-literals,
+  modernize-use-default-member-init,
+  modernize-use-nodiscard,
+  modernize-return-braced-init-list,
+  modernize-concat-nested-namespaces,
+  modernize-use-auto,
+  modernize-loop-convert,
+  modernize-pass-by-value,
+  readability-redundant-access-specifiers,
+  readability-uppercase-literal-suffix,
+  readability-redundant-inline-specifier,
+  readability-static-accessed-through-instance,
+  readability-container-contains,
+  readability-avoid-const-params-in-decls,
+  readability-isolate-declaration,
+  readability-make-member-function-const,
+  readability-implicit-bool-conversion,
+  readability-simplify-boolean-expr,
+  performance-avoid-endl,
+  performance-unnecessary-value-param,
+  performance-unnecessary-copy-initialization,
   misc-unused-parameters,
+  misc-const-correctness,
   cppcoreguidelines-init-variables,
-  cppcoreguidelines-slicing
+  bugprone-implicit-widening-of-multiplication-result,
 
-WarningsAsErrors: ''
+WarningsAsErrors: >
+  modernize-use-override,
+  modernize-use-using,
+  modernize-use-equals-default,
+  modernize-use-emplace,
+  modernize-use-bool-literals,
+  modernize-use-default-member-init,
+  modernize-use-nodiscard,
+  modernize-return-braced-init-list,
+  modernize-concat-nested-namespaces,
+  readability-redundant-access-specifiers,
+  readability-uppercase-literal-suffix,
+  readability-redundant-inline-specifier,
+  readability-static-accessed-through-instance,
+  readability-container-contains,
+  readability-avoid-const-params-in-decls,
+  readability-isolate-declaration,
+  performance-avoid-endl,
+  performance-unnecessary-value-param,
 
 HeaderFilterRegex: 'include/.*\.h$'
 
@@ -42,3 +83,9 @@ CheckOptions:
     value: true
   - key: readability-implicit-bool-conversion.AllowIntegerConditions
     value: true
+  - key: misc-const-correctness.AnalyzeValues
+    value: true
+  - key: misc-const-correctness.AnalyzeReferences
+    value: true
+  - key: misc-const-correctness.WarnPointersAsValues
+    value: false

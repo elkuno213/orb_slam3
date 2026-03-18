@@ -160,6 +160,11 @@ target_include_directories(${PROJECT_NAME} SYSTEM
 target_compile_options(${PROJECT_NAME}
   PRIVATE
     -Wall
+    -Werror=reorder
+    -Werror=sign-compare
+    -Werror=unused-variable
+    -Werror=unused-but-set-variable
+    -Werror=maybe-uninitialized
     $<$<CONFIG:Release>:-O3>
 )
 

@@ -52,9 +52,9 @@ void loadMonocularImages(
     }
 
     // CSV format: "timestamp_ns,image_filename".
-    std::size_t pos = line.find(',');
-    std::string ts  = line.substr(0, pos);
-    std::string img = (pos != std::string::npos) ? line.substr(pos + 1) : ts + ".png";
+    const std::size_t pos = line.find(',');
+    const std::string ts  = line.substr(0, pos);
+    const std::string img = (pos != std::string::npos) ? line.substr(pos + 1) : ts + ".png";
 
     filenames.push_back((image_path / img).string());
     timestamps.push_back(std::stod(ts) * 1e-9);
@@ -86,9 +86,9 @@ void loadStereoImages(
       continue;
     }
 
-    std::size_t pos = line.find(',');
-    std::string ts  = line.substr(0, pos);
-    std::string img = (pos != std::string::npos) ? line.substr(pos + 1) : ts + ".png";
+    const std::size_t pos = line.find(',');
+    const std::string ts  = line.substr(0, pos);
+    const std::string img = (pos != std::string::npos) ? line.substr(pos + 1) : ts + ".png";
 
     left_filenames.push_back((left_path / img).string());
     right_filenames.push_back((right_path / img).string());
@@ -134,8 +134,8 @@ void loadImu(
     data[6] = std::stod(line);
 
     timestamps.push_back(data[0] * 1e-9);
-    acc.push_back(cv::Point3f(data[4], data[5], data[6]));
-    gyro.push_back(cv::Point3f(data[1], data[2], data[3]));
+    acc.emplace_back(data[4], data[5], data[6]);
+    gyro.emplace_back(data[1], data[2], data[3]);
   }
 }
 
@@ -150,7 +150,7 @@ EuRoCRunner::EuRoCRunner(const RunConfig& config)
 }
 
 void EuRoCRunner::load() {
-  bool is_stereo = _sensor == System::STEREO || _sensor == System::IMU_STEREO;
+  const bool is_stereo = _sensor == System::STEREO || _sensor == System::IMU_STEREO;
 
   _sequences.resize(_data_dirs.size());
 

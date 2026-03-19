@@ -37,7 +37,6 @@ Map::Map()
   , mnBigChangeIdx(0)
   , mIsInUse(false)
   , mHasTumbnail(false)
-  , mbBad(false)
   , mbIsInertial(false)
   , mbIMU_BA1(false)
   , mbIMU_BA2(false)
@@ -57,7 +56,6 @@ Map::Map(int initKFid)
   , mnBigChangeIdx(0)
   , mIsInUse(false)
   , mHasTumbnail(false)
-  , mbBad(false)
   , mbIsInertial(false)
   , mbIMU_BA1(false)
   , mbIMU_BA2(false)
@@ -85,7 +83,7 @@ Map::~Map() {
 }
 
 void Map::AddKeyFrame(KeyFrame* pKF) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   if (mspKeyFrames.empty()) {
     _logger->info("First key frame {} | Initial key frame of map {}", pKF->mnId, mnInitKFid);
     mnInitKFid  = pKF->mnId;
@@ -103,23 +101,23 @@ void Map::AddKeyFrame(KeyFrame* pKF) {
 }
 
 void Map::AddMapPoint(MapPoint* pMP) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   _logger->debug("Map point {} added to map", pMP->mnId);
   mspMapPoints.insert(pMP);
 }
 
 void Map::SetImuInitialized() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mbImuInitialized = true;
 }
 
 bool Map::isImuInitialized() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mbImuInitialized;
 }
 
 void Map::EraseMapPoint(MapPoint* pMP) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   _logger->debug("Erasing map point {}...", pMP->mnId);
   mspMapPoints.erase(pMP);
 
@@ -128,7 +126,7 @@ void Map::EraseMapPoint(MapPoint* pMP) {
 }
 
 void Map::EraseKeyFrame(KeyFrame* pKF) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   _logger->debug("Erasing key frame {}...", pKF->mnId);
   mspKeyFrames.erase(pKF);
   if (mspKeyFrames.size() > 0) {
@@ -147,61 +145,61 @@ void Map::EraseKeyFrame(KeyFrame* pKF) {
 }
 
 void Map::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mvpReferenceMapPoints = vpMPs;
 }
 
 void Map::InformNewBigChange() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mnBigChangeIdx++;
 }
 
 int Map::GetLastBigChangeIdx() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mnBigChangeIdx;
 }
 
 std::vector<KeyFrame*> Map::GetAllKeyFrames() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  return std::vector<KeyFrame*>(mspKeyFrames.begin(), mspKeyFrames.end());
+  const std::unique_lock<std::mutex> lock(mMutexMap);
+  return {mspKeyFrames.begin(), mspKeyFrames.end()};
 }
 
 std::vector<MapPoint*> Map::GetAllMapPoints() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
-  return std::vector<MapPoint*>(mspMapPoints.begin(), mspMapPoints.end());
+  const std::unique_lock<std::mutex> lock(mMutexMap);
+  return {mspMapPoints.begin(), mspMapPoints.end()};
 }
 
 long unsigned int Map::MapPointsInMap() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mspMapPoints.size();
 }
 
 long unsigned int Map::KeyFramesInMap() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mspKeyFrames.size();
 }
 
 std::vector<MapPoint*> Map::GetReferenceMapPoints() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mvpReferenceMapPoints;
 }
 
-long unsigned int Map::GetId() {
+long unsigned int Map::GetId() const {
   return mnId;
 }
 
 long unsigned int Map::GetInitKFid() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mnInitKFid;
 }
 
 void Map::SetInitKFid(long unsigned int initKFif) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mnInitKFid = initKFif;
 }
 
 long unsigned int Map::GetMaxKFid() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mnMaxKFid;
 }
 
@@ -224,10 +222,7 @@ void Map::clear() {
   //    sit!=send; sit++)
   //        delete *sit;
 
-  for (std::set<KeyFrame*>::iterator sit = mspKeyFrames.begin(), send = mspKeyFrames.end();
-       sit != send;
-       sit++) {
-    KeyFrame* pKF = *sit;
+  for (auto* pKF : mspKeyFrames) {
     pKF->UpdateMap(nullptr);
     //        delete *sit;
   }
@@ -242,7 +237,7 @@ void Map::clear() {
   mbIMU_BA2 = false;
 }
 
-bool Map::IsInUse() {
+bool Map::IsInUse() const {
   return mIsInUse;
 }
 
@@ -250,36 +245,34 @@ void Map::SetBad() {
   mbBad = true;
 }
 
-bool Map::IsBad() {
+bool Map::IsBad() const {
   return mbBad;
 }
 
 void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool bScaledVel) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
 
   _logger->info("Applying scale of {:.6f} to rotation{}...", s, bScaledVel ? " and velocity" : "");
 
   // Body position (IMU) of first keyframe is fixed to (0,0,0)
-  Sophus::SE3f    Tyw = T;
-  Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
-  Eigen::Vector3f tyw = Tyw.translation();
+  const auto&           Tyw = T;
+  const Eigen::Matrix3f Ryw = Tyw.rotationMatrix();
+  const auto&           tyw = Tyw.translation();
 
-  for (std::set<KeyFrame*>::iterator sit = mspKeyFrames.begin(); sit != mspKeyFrames.end(); sit++) {
-    KeyFrame*    pKF  = *sit;
+  for (auto* pKF : mspKeyFrames) {
     Sophus::SE3f Twc  = pKF->GetPoseInverse();
     Twc.translation() *= s;
-    Sophus::SE3f Tyc  = Tyw * Twc;
-    Sophus::SE3f Tcy  = Tyc.inverse();
+    const Sophus::SE3f Tyc  = Tyw * Twc;
+    const Sophus::SE3f Tcy  = Tyc.inverse();
     pKF->SetPose(Tcy);
-    Eigen::Vector3f Vw = pKF->GetVelocity();
+    const Eigen::Vector3f Vw = pKF->GetVelocity();
     if (!bScaledVel) {
       pKF->SetVelocity(Ryw * Vw);
     } else {
       pKF->SetVelocity(Ryw * Vw * s);
     }
   }
-  for (std::set<MapPoint*>::iterator sit = mspMapPoints.begin(); sit != mspMapPoints.end(); sit++) {
-    MapPoint* pMP = *sit;
+  for (auto* pMP : mspMapPoints) {
     pMP->SetWorldPos(s * Ryw * pMP->GetWorldPos() + tyw);
     pMP->UpdateNormalAndDepth();
   }
@@ -287,32 +280,32 @@ void Map::ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool b
 }
 
 void Map::SetInertialSensor() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mbIsInertial = true;
 }
 
 bool Map::IsInertial() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIsInertial;
 }
 
 void Map::SetIniertialBA1() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA1 = true;
 }
 
 void Map::SetIniertialBA2() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mbIMU_BA2 = true;
 }
 
 bool Map::GetIniertialBA1() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA1;
 }
 
 bool Map::GetIniertialBA2() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mbIMU_BA2;
 }
 
@@ -321,7 +314,7 @@ void Map::ChangeId(long unsigned int nId) {
 }
 
 unsigned int Map::GetLowerKFID() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   if (mpKFlowerID) {
     return mpKFlowerID->mnId;
   }
@@ -329,43 +322,37 @@ unsigned int Map::GetLowerKFID() {
 }
 
 int Map::GetMapChangeIndex() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mnMapChange;
 }
 
 void Map::IncreaseChangeIndex() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mnMapChange++;
 }
 
 int Map::GetLastMapChange() {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   return mnMapChangeNotified;
 }
 
 void Map::SetLastMapChange(int currentChangeId) {
-  std::unique_lock<std::mutex> lock(mMutexMap);
+  const std::unique_lock<std::mutex> lock(mMutexMap);
   mnMapChangeNotified = currentChangeId;
 }
 
 void Map::PreSave(std::set<GeometricCamera*>& spCams) {
   _logger->info("PreSave: cleaning up observations and backing up map data.");
 
-  int nMPWithoutObs = 0;
   for (MapPoint* pMPi : mspMapPoints) {
     if (!pMPi || pMPi->isBad()) {
       continue;
     }
 
-    if (pMPi->GetObservations().size() == 0) {
-      nMPWithoutObs++;
-    }
-    std::map<KeyFrame*, std::tuple<int, int>> mpObs = pMPi->GetObservations();
-    for (std::map<KeyFrame*, std::tuple<int, int>>::iterator it = mpObs.begin(), end = mpObs.end();
-         it != end;
-         ++it) {
-      if (it->first->GetMap() != this || it->first->isBad()) {
-        pMPi->EraseObservation(it->first);
+    const auto mpObs = pMPi->GetObservations();
+    for (const auto& [pKF, obs] : mpObs) {
+      if (pKF->GetMap() != this || pKF->isBad()) {
+        pMPi->EraseObservation(pKF);
       }
     }
   }
@@ -373,8 +360,8 @@ void Map::PreSave(std::set<GeometricCamera*>& spCams) {
   // Saves the id of KF origins
   mvBackupKeyFrameOriginsId.clear();
   mvBackupKeyFrameOriginsId.reserve(mvpKeyFrameOrigins.size());
-  for (int i = 0, numEl = mvpKeyFrameOrigins.size(); i < numEl; ++i) {
-    mvBackupKeyFrameOriginsId.push_back(mvpKeyFrameOrigins[i]->mnId);
+  for (const auto* pKF : mvpKeyFrameOrigins) {
+    mvBackupKeyFrameOriginsId.push_back(pKF->mnId);
   }
 
   // Backup of MapPoints
@@ -482,8 +469,8 @@ void Map::PostLoad(
 
   mvpKeyFrameOrigins.clear();
   mvpKeyFrameOrigins.reserve(mvBackupKeyFrameOriginsId.size());
-  for (std::size_t i = 0; i < mvBackupKeyFrameOriginsId.size(); ++i) {
-    mvpKeyFrameOrigins.push_back(mpKeyFrameId[mvBackupKeyFrameOriginsId[i]]);
+  for (const auto id : mvBackupKeyFrameOriginsId) {
+    mvpKeyFrameOrigins.push_back(mpKeyFrameId[id]);
   }
 
   mvpBackupMapPoints.clear();

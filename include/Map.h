@@ -45,7 +45,7 @@ class Map {
   friend class boost::serialization::access;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int /* version */) {
     ar& mnId;
     ar& mnInitKFid;
     ar& mnMaxKFid;
@@ -90,7 +90,7 @@ public:
   long unsigned int MapPointsInMap();
   long unsigned     KeyFramesInMap();
 
-  long unsigned int GetId();
+  long unsigned int GetId() const;
 
   long unsigned int GetInitKFid();
   void              SetInitKFid(long unsigned int initKFif);
@@ -102,10 +102,10 @@ public:
   void SetStoredMap();
 
   bool HasThumbnail();
-  bool IsInUse();
+  bool IsInUse() const;
 
   void SetBad();
-  bool IsBad();
+  bool IsBad() const;
 
   void clear();
 
@@ -117,7 +117,7 @@ public:
   void SetImuInitialized();
   bool isImuInitialized();
 
-  void ApplyScaledRotation(const Sophus::SE3f& T, const float s, const bool bScaledVel = false);
+  void ApplyScaledRotation(const Sophus::SE3f& T, float s, bool bScaledVel = false);
 
   void SetInertialSensor();
   bool IsInertial();

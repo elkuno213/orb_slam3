@@ -222,7 +222,7 @@ TEST_F(ParseUnifiedHappyPathTest, EurocStereoInertialParsesCorrectly) {
   EXPECT_EQ(config.dataset, DatasetType::EuRoC);
   EXPECT_EQ(config.sensor, System::IMU_STEREO);
   EXPECT_TRUE(config.use_viewer);
-  ASSERT_EQ(config.data_dirs.size(), 2u);
+  ASSERT_EQ(config.data_dirs.size(), 2U);
   EXPECT_EQ(config.data_dirs[0], "/data/V101");
   EXPECT_EQ(config.data_dirs[1], "/data/V102");
 }
@@ -254,7 +254,7 @@ TEST_F(ParseUnifiedHappyPathTest, TumMultipleDataPathsParsesCorrectly) {
   EXPECT_EQ(config.dataset, DatasetType::TUM);
   EXPECT_EQ(config.sensor, System::MONOCULAR);
   EXPECT_FALSE(config.use_viewer);
-  ASSERT_EQ(config.data_dirs.size(), 2u);
+  ASSERT_EQ(config.data_dirs.size(), 2U);
   EXPECT_EQ(config.data_dirs[0], _tmp_dir);
   EXPECT_EQ(config.data_dirs[1], second_dir);
 }
@@ -368,8 +368,8 @@ protected:
     auto& sequence          = _runner->_sequences[0];
     sequence.img_timestamps = {1.0, 2.0, 3.0, 4.0, 5.0};
     sequence.imu_timestamps = {0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0};
-    sequence.acc.resize(10, cv::Point3f(0.f, 0.f, 9.81f));
-    sequence.gyro.resize(10, cv::Point3f(0.f, 0.f, 0.f));
+    sequence.acc.resize(10, cv::Point3f(0.F, 0.F, 9.81F));
+    sequence.gyro.resize(10, cv::Point3f(0.F, 0.F, 0.F));
 
     sequence.first_imu = 0;
     while (sequence.first_imu < sequence.imu_timestamps.size()
@@ -386,16 +386,16 @@ protected:
 
 TEST_F(ImuSyncTest, ReadImuWalksThroughFramesCorrectly) {
   EXPECT_TRUE(_runner->readIMU(0, 0).empty());
-  ASSERT_EQ(_runner->readIMU(0, 1).size(), 3u);
+  ASSERT_EQ(_runner->readIMU(0, 1).size(), 3U);
   EXPECT_EQ(_runner->_sequences[0].first_imu, 4);
-  ASSERT_EQ(_runner->readIMU(0, 2).size(), 2u);
+  ASSERT_EQ(_runner->readIMU(0, 2).size(), 2U);
   EXPECT_EQ(_runner->_sequences[0].first_imu, 6);
 }
 
 TEST_F(ImuSyncTest, CollectImuBoundsCheckPreventsOverread) {
   auto& sequence     = _runner->_sequences[0];
   sequence.first_imu = 9;
-  EXPECT_EQ(_runner->readIMU(0, 4).size(), 1u);
+  EXPECT_EQ(_runner->readIMU(0, 4).size(), 1U);
   EXPECT_EQ(sequence.first_imu, 10);
   EXPECT_TRUE(_runner->readIMU(0, 4).empty());
 }
@@ -456,8 +456,8 @@ TEST_F(TumAssociationTest, RgbdAutoAssociatesCorrectly) {
   config.data_dirs = {_tmp_dir};
   auto runner      = createDatasetRunner(config);
   runner->load();
-  ASSERT_EQ(runner->numSequences(), 1u);
-  ASSERT_EQ(runner->numFrames(0), 5u);
+  ASSERT_EQ(runner->numSequences(), 1U);
+  ASSERT_EQ(runner->numFrames(0), 5U);
 }
 
 TEST_F(TumAssociationTest, RgbdNoMatchesWithTightThreshold) {
@@ -615,8 +615,10 @@ TEST_P(LoadReadParamTest, LoadsFramesAndReadsImagesCorrectly) {
   runner->load();
   ASSERT_EQ(runner->numFrames(0), static_cast<size_t>(p.num_frames));
 
-  cv::Mat left, right, depth;
-  double  ts = runner->readFrame(0, 0, 1.0f, left, right, depth);
+  cv::Mat left;
+  cv::Mat right;
+  cv::Mat depth;
+  double  ts = runner->readFrame(0, 0, 1.0F, left, right, depth);
   EXPECT_FALSE(left.empty());
   EXPECT_EQ(!right.empty(), p.expect_right);
   EXPECT_EQ(!depth.empty(), p.expect_depth);
@@ -671,7 +673,7 @@ TEST_P(InertialLoadParamTest, LoadsMonoInertialSequenceCorrectly) {
   auto        dir    = buildEurocDir(p.name, 3, false, true, 5);
   auto        runner = makeRunner(p.dataset, System::IMU_MONOCULAR, {dir});
   runner->load();
-  ASSERT_EQ(runner->numFrames(0), 3u);
+  ASSERT_EQ(runner->numFrames(0), 3U);
   EXPECT_TRUE(runner->readIMU(0, 0).empty());
   EXPECT_FALSE(runner->readIMU(0, 1).empty());
 }
@@ -696,9 +698,9 @@ TEST_F(DatasetStructureTest, EurocMultipleSequencesLoadCorrectly) {
   auto dir2   = buildEurocDir("euroc_s2", 2, false, false);
   auto runner = makeRunner(DatasetType::EuRoC, System::MONOCULAR, {dir1, dir2});
   runner->load();
-  ASSERT_EQ(runner->numSequences(), 2u);
-  ASSERT_EQ(runner->numFrames(0), 4u);
-  ASSERT_EQ(runner->numFrames(1), 2u);
+  ASSERT_EQ(runner->numSequences(), 2U);
+  ASSERT_EQ(runner->numFrames(0), 4U);
+  ASSERT_EQ(runner->numFrames(1), 2U);
 }
 
 // ────────────────────────────────────────────────────────────────────────────────────────────── //
@@ -746,8 +748,10 @@ TEST_F(DatasetStructureTest, ReadFrameResizesImage) {
   auto runner = makeRunner(DatasetType::EuRoC, System::MONOCULAR, {dir});
   runner->load();
 
-  cv::Mat left, right, depth;
-  runner->readFrame(0, 0, 0.5f, left, right, depth);
+  cv::Mat left;
+  cv::Mat right;
+  cv::Mat depth;
+  runner->readFrame(0, 0, 0.5F, left, right, depth);
   EXPECT_EQ(left.rows, 1);
   EXPECT_EQ(left.cols, 1);
 }
@@ -759,10 +763,12 @@ TEST_F(DatasetStructureTest, ReadFrameWithMissingLeftImageThrows) {
     << "#timestamp [ns],filename\n1000000000,missing.png\n";
   auto runner = makeRunner(DatasetType::EuRoC, System::MONOCULAR, {dir});
   runner->load();
-  ASSERT_EQ(runner->numFrames(0), 1u);
+  ASSERT_EQ(runner->numFrames(0), 1U);
 
-  cv::Mat left, right, depth;
-  EXPECT_THROW(runner->readFrame(0, 0, 1.0f, left, right, depth), std::runtime_error);
+  cv::Mat left;
+  cv::Mat right;
+  cv::Mat depth;
+  EXPECT_THROW(runner->readFrame(0, 0, 1.0F, left, right, depth), std::runtime_error);
 }
 
 // ────────────────────────────────────────────────────────────────────────────────────────────── //

@@ -81,7 +81,7 @@ double DatasetRunner::readFrame(
   }
 
   // Resize if needed.
-  if (std::abs(img_scale - 1.f) > 1e-6f) {
+  if (std::abs(img_scale - 1.F) > 1e-6F) {
     const int width  = static_cast<int>(img_left.cols * img_scale);
     const int height = static_cast<int>(img_left.rows * img_scale);
     cv::resize(img_left, img_left, cv::Size(width, height));
@@ -243,7 +243,7 @@ bool parseArgs(int argc, char** argv, RunConfig& config) {
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, desc), vm);
 
-  if (vm.count("help")) {
+  if (vm.count("help") != 0) {
     std::ostringstream oss;
     oss << desc;
     spdlog::info("\n{}", oss.str());

@@ -31,19 +31,17 @@ class GeometricCamera {
   friend class boost::serialization::access;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int /*version*/) {
     ar& mnId;
     ar& mnType;
     ar& mvParameters;
   }
 
 public:
-  GeometricCamera() {
-  }
+  GeometricCamera() = default;
   GeometricCamera(const std::vector<float>& _vParameters) : mvParameters(_vParameters) {
   }
-  ~GeometricCamera() {
-  }
+  ~GeometricCamera() = default;
 
   virtual cv::Point2f     project(const cv::Point3f& p3D)     = 0;
   virtual Eigen::Vector2d project(const Eigen::Vector3d& v3D) = 0;
@@ -75,8 +73,8 @@ public:
     const cv::KeyPoint&    kp2,
     const Eigen::Matrix3f& R12,
     const Eigen::Vector3f& t12,
-    const float            sigmaLevel,
-    const float            unc
+    float                  sigmaLevel,
+    float                  unc
   ) = 0;
 
   float getParameter(const int i) {
@@ -90,7 +88,7 @@ public:
     return mvParameters.size();
   }
 
-  std::vector<float> parameters() const {
+  [[nodiscard]] std::vector<float> parameters() const {
     return mvParameters;
   }
 
@@ -100,16 +98,16 @@ public:
     GeometricCamera*    pOther,
     Sophus::SE3f&       Tcw1,
     Sophus::SE3f&       Tcw2,
-    const float         sigmaLevel1,
-    const float         sigmaLevel2,
+    float               sigmaLevel1,
+    float               sigmaLevel2,
     Eigen::Vector3f&    x3Dtriangulated
   ) = 0;
 
-  unsigned int GetId() {
+  [[nodiscard]] unsigned int GetId() const {
     return mnId;
   }
 
-  unsigned int GetType() {
+  [[nodiscard]] unsigned int GetType() const {
     return mnType;
   }
 

@@ -28,12 +28,12 @@
 namespace ORB_SLAM3 {
 
 template <class Archive>
-void serializeSophusSE3(Archive& ar, Sophus::SE3f& T, const unsigned int version) {
+void serializeSophusSE3(Archive& ar, Sophus::SE3f& T, const unsigned int /*version*/) {
   Eigen::Vector4f quat;
   Eigen::Vector3f transl;
 
   if (Archive::is_saving::value) {
-    Eigen::Quaternionf q = T.unit_quaternion();
+    const Eigen::Quaternionf q = T.unit_quaternion();
     quat << q.w(), q.x(), q.y(), q.z();
     transl = T.translation();
   }
@@ -42,7 +42,7 @@ void serializeSophusSE3(Archive& ar, Sophus::SE3f& T, const unsigned int version
   ar& boost::serialization::make_array(transl.data(), transl.size());
 
   if (Archive::is_loading::value) {
-    Eigen::Quaternionf q(quat[0], quat[1], quat[2], quat[3]);
+    const Eigen::Quaternionf q(quat[0], quat[1], quat[2], quat[3]);
     T = Sophus::SE3f(q, transl);
   }
 }
@@ -66,9 +66,11 @@ version)
 }*/
 
 template <class Archive>
-void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int version) {
-  int  cols, rows, type;
-  bool continuous;
+void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int /*version*/) {
+  int  cols       = 0;
+  int  rows       = 0;
+  int  type       = 0;
+  bool continuous = false;
 
   if (Archive::is_saving::value) {
     cols       = mat.cols;
@@ -84,7 +86,7 @@ void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int version) {
   }
 
   if (continuous) {
-    const unsigned int data_size = rows * cols * mat.elemSize();
+    const auto data_size = static_cast<size_t>(rows) * static_cast<size_t>(cols) * mat.elemSize();
     ar&                boost::serialization::make_array(mat.ptr(), data_size);
   } else {
     const unsigned int row_size = cols * mat.elemSize();
@@ -95,23 +97,22 @@ void serializeMatrix(Archive& ar, cv::Mat& mat, const unsigned int version) {
 }
 
 template <class Archive>
-void serializeMatrix(Archive& ar, const cv::Mat& mat, const unsigned int version) {
+void serializeMatrix(Archive& ar, const cv::Mat& mat, const unsigned int /*version*/) {
   cv::Mat matAux = mat;
 
-  serializeMatrix(ar, matAux, version);
+  serializeMatrix(ar, matAux, 0);
 
   if (Archive::is_loading::value) {
-    cv::Mat* ptr;
-    ptr  = (cv::Mat*)(&mat);
+    auto* ptr = (cv::Mat*)(&mat);
     *ptr = matAux;
   }
 }
 
 template <class Archive>
 void serializeVectorKeyPoints(
-  Archive& ar, const std::vector<cv::KeyPoint>& vKP, const unsigned int version
+  Archive& ar, const std::vector<cv::KeyPoint>& vKP, const unsigned int /*version*/
 ) {
-  int NumEl;
+  int NumEl = 0;
 
   if (Archive::is_saving::value) {
     NumEl = vKP.size();
@@ -149,8 +150,7 @@ void serializeVectorKeyPoints(
   }
 
   if (Archive::is_loading::value) {
-    std::vector<cv::KeyPoint>* ptr;
-    ptr  = (std::vector<cv::KeyPoint>*)(&vKP);
+    auto* ptr = (std::vector<cv::KeyPoint>*)(&vKP);
     *ptr = vKPaux;
   }
 }

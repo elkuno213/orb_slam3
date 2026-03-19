@@ -37,8 +37,8 @@ public:
     KeyFrame*                     pKF1,
     KeyFrame*                     pKF2,
     const std::vector<MapPoint*>& vpMatched12,
-    const bool                    bFixScale           = true,
-    const std::vector<KeyFrame*>  vpKeyFrameMatchedMP = std::vector<KeyFrame*>()
+    bool                          bFixScale           = true,
+    std::vector<KeyFrame*>        vpKeyFrameMatchedMP = std::vector<KeyFrame*>()
   );
 
   void SetRansacParameters(double probability = 0.99, int minInliers = 6, int maxIterations = 300);
@@ -55,7 +55,7 @@ public:
   Eigen::Matrix4f GetEstimatedTransformation();
   Eigen::Matrix3f GetEstimatedRotation();
   Eigen::Vector3f GetEstimatedTranslation();
-  float           GetEstimatedScale();
+  float           GetEstimatedScale() const;
 
 protected:
   void ComputeCentroid(Eigen::Matrix3f& P, Eigen::Matrix3f& Pr, Eigen::Vector3f& C);
@@ -76,7 +76,6 @@ protected:
     GeometricCamera*                    pCamera
   );
 
-protected:
   // KeyFrames and matches
   KeyFrame* mpKF1;
   KeyFrame* mpKF2;
@@ -105,9 +104,9 @@ protected:
   int               mnInliersi;
 
   // Current Ransac State
-  int               mnIterations;
+  int               mnIterations{0};
   std::vector<bool> mvbBestInliers;
-  int               mnBestInliers;
+  int               mnBestInliers{0};
   Eigen::Matrix4f   mBestT12;
   Eigen::Matrix3f   mBestRotation;
   Eigen::Vector3f   mBestTranslation;

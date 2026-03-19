@@ -28,7 +28,7 @@
 namespace ORB_SLAM3 {
 
 class TwoViewReconstruction {
-  typedef std::pair<int, int> Match;
+  using Match = std::pair<int, int>;
 
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW

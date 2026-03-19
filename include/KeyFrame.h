@@ -253,13 +253,13 @@ public:
   MapPoint*              GetMapPoint(const std::size_t& idx);
 
   // KeyPoint functions
-  std::vector<std::size_t> GetFeaturesInArea(
-    const float& x, const float& y, const float& r, const bool bRight = false
+  [[nodiscard]] std::vector<std::size_t> GetFeaturesInArea(
+    const float& x, const float& y, const float& r, bool bRight = false
   ) const;
   bool UnprojectStereo(int i, Eigen::Vector3f& x3D);
 
   // Image
-  bool IsInImage(const float& x, const float& y) const;
+  [[nodiscard]] bool IsInImage(const float& x, const float& y) const;
 
   // Enable/Disable bad flag changes
   void SetNotErase();
@@ -270,7 +270,7 @@ public:
   bool isBad();
 
   // Compute Scene Depth (q=2 median). Used in monocular.
-  float ComputeSceneMedianDepth(const int q);
+  float ComputeSceneMedianDepth(int q);
 
   static bool weightComp(int a, int b) {
     return a > b;
@@ -308,7 +308,7 @@ public:
   bool bImu;
 
   // The following variables are accesed from only 1 thread or never change (no mutex needed).
-public:
+
   static long unsigned int nNextId;
   long unsigned int        mnId;
   const long unsigned int  mnFrameId;

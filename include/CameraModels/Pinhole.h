@@ -36,27 +36,27 @@ class Pinhole : public GeometricCamera {
   friend class boost::serialization::access;
 
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int /*version*/) {
     ar& boost::serialization::base_object<GeometricCamera>(*this);
   }
 
 public:
   Pinhole();
-  Pinhole(const std::vector<float> _vParameters);
+  Pinhole(const std::vector<float>& _vParameters);
   Pinhole(Pinhole* pPinhole);
   ~Pinhole();
 
-  cv::Point2f     project(const cv::Point3f& p3D);
-  Eigen::Vector2d project(const Eigen::Vector3d& v3D);
-  Eigen::Vector2f project(const Eigen::Vector3f& v3D);
-  Eigen::Vector2f projectMat(const cv::Point3f& p3D);
+  cv::Point2f     project(const cv::Point3f& p3D) override;
+  Eigen::Vector2d project(const Eigen::Vector3d& v3D) override;
+  Eigen::Vector2f project(const Eigen::Vector3f& v3D) override;
+  Eigen::Vector2f projectMat(const cv::Point3f& p3D) override;
 
-  float uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D);
+  float uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D) override;
 
-  Eigen::Vector3f unprojectEig(const cv::Point2f& p2D);
-  cv::Point3f     unproject(const cv::Point2f& p2D);
+  Eigen::Vector3f unprojectEig(const cv::Point2f& p2D) override;
+  cv::Point3f     unproject(const cv::Point2f& p2D) override;
 
-  Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d& v3D);
+  Eigen::Matrix<double, 2, 3> projectJac(const Eigen::Vector3d& v3D) override;
 
   bool ReconstructWithTwoViews(
     const std::vector<cv::KeyPoint>& vKeys1,
@@ -65,10 +65,10 @@ public:
     Sophus::SE3f&                    T21,
     std::vector<cv::Point3f>&        vP3D,
     std::vector<bool>&               vbTriangulated
-  );
+  ) override;
 
-  cv::Mat         toK();
-  Eigen::Matrix3f toK_();
+  cv::Mat         toK() override;
+  Eigen::Matrix3f toK_() override;
 
   bool epipolarConstrain(
     GeometricCamera*       pCamera2,
@@ -76,9 +76,9 @@ public:
     const cv::KeyPoint&    kp2,
     const Eigen::Matrix3f& R12,
     const Eigen::Vector3f& t12,
-    const float            sigmaLevel,
-    const float            unc
-  );
+    float                  sigmaLevel,
+    float                  unc
+  ) override;
 
   bool matchAndtriangulate(
     const cv::KeyPoint& kp1,
@@ -86,10 +86,10 @@ public:
     GeometricCamera*    pOther,
     Sophus::SE3f&       Tcw1,
     Sophus::SE3f&       Tcw2,
-    const float         sigmaLevel1,
-    const float         sigmaLevel2,
+    float               sigmaLevel1,
+    float               sigmaLevel2,
     Eigen::Vector3f&    x3Dtriangulated
-  );
+  ) override;
 
   friend std::ostream& operator<<(std::ostream& os, const Pinhole& ph);
   friend std::istream& operator>>(std::istream& os, Pinhole& ph);

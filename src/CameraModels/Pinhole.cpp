@@ -33,7 +33,7 @@ Pinhole::Pinhole() {
   mnId   = nNextId++;
   mnType = CAM_PINHOLE;
 }
-Pinhole::Pinhole(const std::vector<float> _vParameters)
+Pinhole::Pinhole(const std::vector<float>& _vParameters)
   : GeometricCamera(_vParameters), tvr(nullptr) {
   assert(mvParameters.size() == 4);
   mnId   = nNextId++;
@@ -53,10 +53,10 @@ Pinhole::~Pinhole() {
 }
 
 cv::Point2f Pinhole::project(const cv::Point3f& p3D) {
-  return cv::Point2f(
+  return {
     mvParameters[0] * p3D.x / p3D.z + mvParameters[2],
     mvParameters[1] * p3D.y / p3D.z + mvParameters[3]
-  );
+  };
 }
 
 Eigen::Vector2d Pinhole::project(const Eigen::Vector3d& v3D) {
@@ -76,36 +76,36 @@ Eigen::Vector2f Pinhole::project(const Eigen::Vector3f& v3D) {
 }
 
 Eigen::Vector2f Pinhole::projectMat(const cv::Point3f& p3D) {
-  cv::Point2f point = project(p3D);
-  return Eigen::Vector2f(point.x, point.y);
+  const cv::Point2f point = project(p3D);
+  return {point.x, point.y};
 }
 
-float Pinhole::uncertainty2(const Eigen::Matrix<double, 2, 1>& p2D) {
+float Pinhole::uncertainty2(const Eigen::Matrix<double, 2, 1>& /*p2D*/) {
   return 1.0;
 }
 
 Eigen::Vector3f Pinhole::unprojectEig(const cv::Point2f& p2D) {
-  return Eigen::Vector3f(
+  return {
     (p2D.x - mvParameters[2]) / mvParameters[0],
     (p2D.y - mvParameters[3]) / mvParameters[1],
-    1.f
-  );
+    1.F
+  };
 }
 
 cv::Point3f Pinhole::unproject(const cv::Point2f& p2D) {
-  return cv::Point3f(
+  return {
     (p2D.x - mvParameters[2]) / mvParameters[0],
     (p2D.y - mvParameters[3]) / mvParameters[1],
-    1.f
-  );
+    1.F
+  };
 }
 
 Eigen::Matrix<double, 2, 3> Pinhole::projectJac(const Eigen::Vector3d& v3D) {
   Eigen::Matrix<double, 2, 3> Jac;
   Jac(0, 0) = mvParameters[0] / v3D[2];
-  Jac(0, 1) = 0.f;
+  Jac(0, 1) = 0.F;
   Jac(0, 2) = -mvParameters[0] * v3D[0] / (v3D[2] * v3D[2]);
-  Jac(1, 0) = 0.f;
+  Jac(1, 0) = 0.F;
   Jac(1, 1) = mvParameters[1] / v3D[2];
   Jac(1, 2) = -mvParameters[1] * v3D[1] / (v3D[2] * v3D[2]);
 
@@ -121,7 +121,7 @@ bool Pinhole::ReconstructWithTwoViews(
   std::vector<bool>&               vbTriangulated
 ) {
   if (!tvr) {
-    Eigen::Matrix3f K = toK_();
+    const Eigen::Matrix3f K = toK_();
     tvr               = new TwoViewReconstruction(K);
   }
 
@@ -130,13 +130,13 @@ bool Pinhole::ReconstructWithTwoViews(
 
 cv::Mat Pinhole::toK() {
   cv::Mat K
-    = (cv::Mat_<float>(3, 3) << mvParameters[0], 0.f, mvParameters[2], 0.f, mvParameters[1], mvParameters[3], 0.f, 0.f, 1.f);
+    = (cv::Mat_<float>(3, 3) << mvParameters[0], 0.F, mvParameters[2], 0.F, mvParameters[1], mvParameters[3], 0.F, 0.F, 1.F);
   return K;
 }
 
 Eigen::Matrix3f Pinhole::toK_() {
   Eigen::Matrix3f K;
-  K << mvParameters[0], 0.f, mvParameters[2], 0.f, mvParameters[1], mvParameters[3], 0.f, 0.f, 1.f;
+  K << mvParameters[0], 0.F, mvParameters[2], 0.F, mvParameters[1], mvParameters[3], 0.F, 0.F, 1.F;
   return K;
 }
 
@@ -146,13 +146,13 @@ bool Pinhole::epipolarConstrain(
   const cv::KeyPoint&    kp2,
   const Eigen::Matrix3f& R12,
   const Eigen::Vector3f& t12,
-  const float            sigmaLevel,
+  const float            /*sigmaLevel*/,
   const float            unc
 ) {
   // Compute Fundamental Matrix
-  Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
-  Eigen::Matrix3f K1   = toK_();
-  Eigen::Matrix3f K2   = pCamera2->toK_();
+  const Eigen::Matrix3f t12x = Sophus::SO3f::hat(t12);
+  const Eigen::Matrix3f K1   = toK_();
+  const Eigen::Matrix3f K2   = pCamera2->toK_();
   Eigen::Matrix3f F12  = K1.transpose().inverse() * t12x * R12 * K2.inverse();
 
   // Epipolar line in second image l = x1'F12 = [a b c]
@@ -174,14 +174,14 @@ bool Pinhole::epipolarConstrain(
 }
 
 bool Pinhole::matchAndtriangulate(
-  const cv::KeyPoint& kp1,
-  const cv::KeyPoint& kp2,
-  GeometricCamera*    pOther,
-  Sophus::SE3f&       Tcw1,
-  Sophus::SE3f&       Tcw2,
-  const float         sigmaLevel1,
-  const float         sigmaLevel2,
-  Eigen::Vector3f&    x3Dtriangulated
+  const cv::KeyPoint& /*kp1*/,
+  const cv::KeyPoint& /*kp2*/,
+  GeometricCamera*    /*pOther*/,
+  Sophus::SE3f&       /*Tcw1*/,
+  Sophus::SE3f&       /*Tcw2*/,
+  const float         /*sigmaLevel1*/,
+  const float         /*sigmaLevel2*/,
+  Eigen::Vector3f&    /*x3Dtriangulated*/
 ) {
   return false;
 }
@@ -193,7 +193,7 @@ std::ostream& operator<<(std::ostream& os, const Pinhole& ph) {
 }
 
 std::istream& operator>>(std::istream& is, Pinhole& ph) {
-  float nextParam;
+  float nextParam = 0.0F;
   for (std::size_t i = 0; i < 4; i++) {
     assert(is.good()); // Make sure the input stream is good
     is >> nextParam;
@@ -207,7 +207,7 @@ bool Pinhole::IsEqual(GeometricCamera* pCam) {
     return false;
   }
 
-  Pinhole* pPinholeCam = (Pinhole*)pCam;
+  auto* pPinholeCam = (Pinhole*)pCam;
 
   if (size() != pPinholeCam->size()) {
     return false;

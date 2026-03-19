@@ -66,7 +66,7 @@ public:
 
   // void SetTrackingPause();
 
-  bool both;
+  bool both{false};
 
 private:
   bool ParseViewerParamFile(cv::FileStorage& fSettings);
@@ -87,12 +87,12 @@ private:
 
   bool       CheckFinish();
   void       SetFinish();
-  bool       mbFinishRequested;
-  bool       mbFinished;
+  bool       mbFinishRequested{false};
+  bool       mbFinished{true};
   std::mutex mMutexFinish;
 
-  bool       mbStopped;
-  bool       mbStopRequested;
+  bool       mbStopped{true};
+  bool       mbStopRequested{false};
   std::mutex mMutexStop;
 
   bool mbStopTrack;

@@ -42,22 +42,17 @@ Viewer::Viewer(
   const std::string& strSettingPath,
   Settings*          settings
 )
-  : both(false)
-  , mpSystem(pSystem)
+  : mpSystem(pSystem)
   , mpFrameDrawer(pFrameDrawer)
   , mpMapDrawer(pMapDrawer)
   , mpTracker(pTracking)
-  , mbFinishRequested(false)
-  , mbFinished(true)
-  , mbStopped(true)
-  , mbStopRequested(false)
   , _logger(logging::CreateModuleLogger("Viewer")) {
   if (settings) {
     newParameterLoader(settings);
   } else {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
-    bool is_correct = ParseViewerParamFile(fSettings);
+    const bool is_correct = ParseViewerParamFile(fSettings);
 
     if (!is_correct) {
       throw std::runtime_error(
@@ -70,7 +65,7 @@ Viewer::Viewer(
 }
 
 void Viewer::newParameterLoader(Settings* settings) {
-  mImageViewerScale = 1.f;
+  mImageViewerScale = 1.F;
 
   float fps = settings->fps();
   if (fps < 1) {
@@ -78,7 +73,7 @@ void Viewer::newParameterLoader(Settings* settings) {
   }
   mT = 1e3 / fps;
 
-  cv::Size imSize = settings->newImSize();
+  const cv::Size imSize = settings->newImSize();
   mImageHeight    = imSize.height;
   mImageWidth     = imSize.width;
 
@@ -91,7 +86,7 @@ void Viewer::newParameterLoader(Settings* settings) {
 
 bool Viewer::ParseViewerParamFile(cv::FileStorage& fSettings) {
   bool b_miss_params = false;
-  mImageViewerScale  = 1.f;
+  mImageViewerScale  = 1.F;
 
   float fps = fSettings["Camera.fps"];
   if (fps < 1) {
@@ -183,7 +178,7 @@ void Viewer::Run() {
   pangolin::Var<bool> menuStepByStep("menu.Step By Step", false, true); // false, true
   pangolin::Var<bool> menuStep("menu.Step", false, false);
 
-  pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
+  const pangolin::Var<bool> menuShowOptLba("menu.Show LBA opt", false, true);
   // Define Camera Render Object (for view / scene browsing)
   pangolin::OpenGlRenderState s_cam(
     pangolin::ProjectionMatrix(1024, 768, mViewpointF, mViewpointF, 512, 389, 0.1, 1000),
@@ -191,11 +186,12 @@ void Viewer::Run() {
   );
 
   // Add named OpenGL viewport to window and provide 3D Handler
-  pangolin::View& d_cam = pangolin::CreateDisplay()
-                            .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0f / 768.0f)
+  const pangolin::View& d_cam = pangolin::CreateDisplay()
+                            .SetBounds(0.0, 1.0, pangolin::Attach::Pix(175), 1.0, -1024.0F / 768.0F)
                             .SetHandler(new pangolin::Handler3D(s_cam));
 
-  pangolin::OpenGlMatrix Twc, Twr;
+  pangolin::OpenGlMatrix Twc;
+  const pangolin::OpenGlMatrix Twr;
   Twc.SetIdentity();
   pangolin::OpenGlMatrix Ow; // Oriented with g in the z axis
   Ow.SetIdentity();
@@ -206,14 +202,16 @@ void Viewer::Run() {
   bool bStepByStep       = false;
   bool bCameraView       = true;
 
-  if(mpTracker->mSensor == mpSystem->MONOCULAR || mpTracker->mSensor == mpSystem->STEREO || mpTracker->mSensor == mpSystem->RGBD) {
+  if (mpTracker->mSensor == ORB_SLAM3::System::MONOCULAR
+      || mpTracker->mSensor == ORB_SLAM3::System::STEREO
+      || mpTracker->mSensor == ORB_SLAM3::System::RGBD) {
     menuShowGraph = true;
   }
 
-  float trackedImageScale = mpTracker->GetImageScale();
+  const float trackedImageScale = mpTracker->GetImageScale();
 
   _logger->info("Starting the Viewer");
-  while (1) {
+  while (true) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     mpMapDrawer->GetCurrentOpenGLCameraMatrix(Twc, Ow);
@@ -294,7 +292,7 @@ void Viewer::Run() {
     }
 
     d_cam.Activate(s_cam);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(1.0F, 1.0F, 1.0F, 1.0F);
     mpMapDrawer->DrawCurrentCamera(Twc);
     if (menuShowKeyFrames || menuShowGraph || menuShowInertialGraph || menuShowOptLba) {
       mpMapDrawer
@@ -307,18 +305,18 @@ void Viewer::Run() {
     pangolin::FinishFrame();
 
     cv::Mat toShow;
-    cv::Mat im = mpFrameDrawer->DrawFrame(trackedImageScale);
+    const cv::Mat im = mpFrameDrawer->DrawFrame(trackedImageScale);
 
     if (both) {
-      cv::Mat imRight = mpFrameDrawer->DrawRightFrame(trackedImageScale);
+      const cv::Mat imRight = mpFrameDrawer->DrawRightFrame(trackedImageScale);
       cv::hconcat(im, imRight, toShow);
     } else {
       toShow = im;
     }
 
-    if (mImageViewerScale != 1.f) {
-      int width  = toShow.cols * mImageViewerScale;
-      int height = toShow.rows * mImageViewerScale;
+    if (mImageViewerScale != 1.F) {
+      const int width  = toShow.cols * mImageViewerScale;
+      const int height = toShow.rows * mImageViewerScale;
       cv::resize(toShow, toShow, cv::Size(width, height));
     }
 
@@ -370,40 +368,40 @@ void Viewer::Run() {
 }
 
 void Viewer::RequestFinish() {
-  std::unique_lock<std::mutex> lock(mMutexFinish);
+  const std::unique_lock<std::mutex> lock(mMutexFinish);
   mbFinishRequested = true;
 }
 
 bool Viewer::CheckFinish() {
-  std::unique_lock<std::mutex> lock(mMutexFinish);
+  const std::unique_lock<std::mutex> lock(mMutexFinish);
   return mbFinishRequested;
 }
 
 void Viewer::SetFinish() {
-  std::unique_lock<std::mutex> lock(mMutexFinish);
+  const std::unique_lock<std::mutex> lock(mMutexFinish);
   mbFinished = true;
 }
 
 bool Viewer::isFinished() {
-  std::unique_lock<std::mutex> lock(mMutexFinish);
+  const std::unique_lock<std::mutex> lock(mMutexFinish);
   return mbFinished;
 }
 
 void Viewer::RequestStop() {
-  std::unique_lock<std::mutex> lock(mMutexStop);
+  const std::unique_lock<std::mutex> lock(mMutexStop);
   if (!mbStopped) {
     mbStopRequested = true;
   }
 }
 
 bool Viewer::isStopped() {
-  std::unique_lock<std::mutex> lock(mMutexStop);
+  const std::unique_lock<std::mutex> lock(mMutexStop);
   return mbStopped;
 }
 
 bool Viewer::Stop() {
-  std::unique_lock<std::mutex> lock(mMutexStop);
-  std::unique_lock<std::mutex> lock2(mMutexFinish);
+  const std::unique_lock<std::mutex> lock(mMutexStop);
+  const std::unique_lock<std::mutex> lock2(mMutexFinish);
 
   if (mbFinishRequested) {
     return false;
@@ -417,7 +415,7 @@ bool Viewer::Stop() {
 }
 
 void Viewer::Release() {
-  std::unique_lock<std::mutex> lock(mMutexStop);
+  const std::unique_lock<std::mutex> lock(mMutexStop);
   mbStopped = false;
 }
 

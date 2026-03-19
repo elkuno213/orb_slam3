@@ -117,7 +117,9 @@ int main(int argc, char** argv) {
       ORB_SLAM3::TicToc timer;
 
       for (std::size_t frame = 0; frame < num_frames; frame++) {
-        cv::Mat img_left, img_right, depth;
+        cv::Mat img_left;
+        cv::Mat img_right;
+        cv::Mat depth;
 
         // Read frame.
         const double timestamp

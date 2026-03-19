@@ -43,10 +43,10 @@ public:
   void Update(Tracking* pTracker);
 
   // Draw last processed frame.
-  cv::Mat DrawFrame(float imageScale = 1.f);
-  cv::Mat DrawRightFrame(float imageScale = 1.f);
+  cv::Mat DrawFrame(float imageScale = 1.F);
+  cv::Mat DrawRightFrame(float imageScale = 1.F);
 
-  bool both;
+  bool both{false};
 
 protected:
   void DrawTextInfo(cv::Mat& im, int nState, cv::Mat& imText);

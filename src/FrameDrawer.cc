@@ -25,7 +25,7 @@
 
 namespace ORB_SLAM3 {
 
-FrameDrawer::FrameDrawer(Atlas* pAtlas) : both(false), mpAtlas(pAtlas) {
+FrameDrawer::FrameDrawer(Atlas* pAtlas) : mpAtlas(pAtlas) {
   mState   = Tracking::SYSTEM_NOT_READY;
   mIm      = cv::Mat(480, 640, CV_8UC3, cv::Scalar(0, 0, 0));
   mImRight = cv::Mat(480, 640, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -36,9 +36,10 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
   std::vector<cv::KeyPoint> vIniKeys;     // Initialization: KeyPoints in reference frame
   std::vector<int>          vMatches;     // Initialization: correspondeces with reference keypoints
   std::vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
-  std::vector<bool>         vbVO, vbMap;  // Tracked MapPoints in current frame
+  std::vector<bool>         vbVO;
+  std::vector<bool>         vbMap; // Tracked MapPoints in current frame
   std::vector<std::pair<cv::Point2f, cv::Point2f> > vTracks;
-  int                                               state; // Tracking state
+  int                                               state = 0; // Tracking state
   std::vector<float>                                vCurrentDepth;
 
   Frame                                    currentFrame;
@@ -50,12 +51,12 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
   std::map<long unsigned int, cv::Point2f> mProjectPoints;
   std::map<long unsigned int, cv::Point2f> mMatchedInImage;
 
-  cv::Scalar standardColor(0, 255, 0);
-  cv::Scalar odometryColor(255, 0, 0);
+  const cv::Scalar standardColor(0, 255, 0);
+  const cv::Scalar odometryColor(255, 0, 0);
 
   // Copy variables within scoped mutex
   {
-    std::unique_lock<std::mutex> lock(mMutex);
+    const std::unique_lock<std::mutex> lock(mMutex);
     state = mState;
     if (mState == Tracking::SYSTEM_NOT_READY) {
       mState = Tracking::NO_IMAGES_YET;
@@ -89,9 +90,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
     }
   }
 
-  if (imageScale != 1.f) {
-    int imWidth  = im.cols / imageScale;
-    int imHeight = im.rows / imageScale;
+  if (imageScale != 1.F) {
+    const int imWidth  = im.cols / imageScale;
+    const int imHeight = im.rows / imageScale;
     cv::resize(im, im, cv::Size(imWidth, imHeight));
   }
 
@@ -103,8 +104,9 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
   if (state == Tracking::NOT_INITIALIZED) {
     for (unsigned int i = 0; i < vMatches.size(); i++) {
       if (vMatches[i] >= 0) {
-        cv::Point2f pt1, pt2;
-        if (imageScale != 1.f) {
+        cv::Point2f pt1;
+        cv::Point2f pt2;
+        if (imageScale != 1.F) {
           pt1 = vIniKeys[i].pt / imageScale;
           pt2 = vCurrentKeys[vMatches[i]].pt / imageScale;
         } else {
@@ -114,16 +116,15 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
         cv::line(im, pt1, pt2, standardColor);
       }
     }
-    for (std::vector<std::pair<cv::Point2f, cv::Point2f> >::iterator it = vTracks.begin();
-         it != vTracks.end();
-         it++) {
-      cv::Point2f pt1, pt2;
-      if (imageScale != 1.f) {
-        pt1 = (*it).first / imageScale;
-        pt2 = (*it).second / imageScale;
+    for (const auto& track : vTracks) {
+      cv::Point2f pt1;
+      cv::Point2f pt2;
+      if (imageScale != 1.F) {
+        pt1 = track.first / imageScale;
+        pt2 = track.second / imageScale;
       } else {
-        pt1 = (*it).first;
-        pt2 = (*it).second;
+        pt1 = track.first;
+        pt2 = track.second;
       }
       cv::line(im, pt1, pt2, standardColor, 5);
     }
@@ -133,15 +134,16 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale) {
     mnTracked     = 0;
     mnTrackedVO   = 0;
     const float r = 5;
-    int         n = vCurrentKeys.size();
+    const int   n = vCurrentKeys.size();
     for (int i = 0; i < n; i++) {
       if (vbVO[i] || vbMap[i]) {
-        cv::Point2f pt1, pt2;
+        cv::Point2f pt1;
+        cv::Point2f pt2;
         cv::Point2f point;
-        if (imageScale != 1.f) {
-          point    = vCurrentKeys[i].pt / imageScale;
-          float px = vCurrentKeys[i].pt.x / imageScale;
-          float py = vCurrentKeys[i].pt.y / imageScale;
+        if (imageScale != 1.F) {
+          point          = vCurrentKeys[i].pt / imageScale;
+          const float px = vCurrentKeys[i].pt.x / imageScale;
+          const float py = vCurrentKeys[i].pt.y / imageScale;
           pt1.x    = px - r;
           pt1.y    = py - r;
           pt2.x    = px + r;
@@ -180,12 +182,13 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
   std::vector<cv::KeyPoint> vIniKeys;     // Initialization: KeyPoints in reference frame
   std::vector<int>          vMatches;     // Initialization: correspondeces with reference keypoints
   std::vector<cv::KeyPoint> vCurrentKeys; // KeyPoints in current frame
-  std::vector<bool>         vbVO, vbMap;  // Tracked MapPoints in current frame
-  int                       state;        // Tracking state
+  std::vector<bool>         vbVO;
+  std::vector<bool>         vbMap;        // Tracked MapPoints in current frame
+  int                       state = 0;    // Tracking state
 
   // Copy variables within scoped mutex
   {
-    std::unique_lock<std::mutex> lock(mMutex);
+    const std::unique_lock<std::mutex> lock(mMutex);
     state = mState;
     if (mState == Tracking::SYSTEM_NOT_READY) {
       mState = Tracking::NO_IMAGES_YET;
@@ -206,9 +209,9 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
     }
   } // destroy scoped mutex -> release mutex
 
-  if (imageScale != 1.f) {
-    int imWidth  = im.cols / imageScale;
-    int imHeight = im.rows / imageScale;
+  if (imageScale != 1.F) {
+    const int imWidth  = im.cols / imageScale;
+    const int imHeight = im.rows / imageScale;
     cv::resize(im, im, cv::Size(imWidth, imHeight));
   }
 
@@ -221,8 +224,9 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
   {
     for (unsigned int i = 0; i < vMatches.size(); i++) {
       if (vMatches[i] >= 0) {
-        cv::Point2f pt1, pt2;
-        if (imageScale != 1.f) {
+        cv::Point2f pt1;
+        cv::Point2f pt2;
+        if (imageScale != 1.F) {
           pt1 = vIniKeys[i].pt / imageScale;
           pt2 = vCurrentKeys[vMatches[i]].pt / imageScale;
         } else {
@@ -243,12 +247,13 @@ cv::Mat FrameDrawer::DrawRightFrame(float imageScale) {
 
     for (int i = 0; i < n; i++) {
       if (vbVO[i + Nleft] || vbMap[i + Nleft]) {
-        cv::Point2f pt1, pt2;
+        cv::Point2f pt1;
+        cv::Point2f pt2;
         cv::Point2f point;
-        if (imageScale != 1.f) {
+        if (imageScale != 1.F) {
           point    = mvCurrentKeysRight[i].pt / imageScale;
-          float px = mvCurrentKeysRight[i].pt.x / imageScale;
-          float py = mvCurrentKeysRight[i].pt.y / imageScale;
+          const float px = mvCurrentKeysRight[i].pt.x / imageScale;
+          const float py = mvCurrentKeysRight[i].pt.y / imageScale;
           pt1.x    = px - r;
           pt1.y    = py - r;
           pt2.x    = px + r;
@@ -294,9 +299,9 @@ void FrameDrawer::DrawTextInfo(cv::Mat& im, int nState, cv::Mat& imText) {
     } else {
       s << "LOCALIZATION | ";
     }
-    int nMaps = mpAtlas->CountMaps();
-    int nKFs  = mpAtlas->KeyFramesInMap();
-    int nMPs  = mpAtlas->MapPointsInMap();
+    const int nMaps = mpAtlas->CountMaps();
+    const int nKFs  = mpAtlas->KeyFramesInMap();
+    const int nMPs  = mpAtlas->MapPointsInMap();
     s << "Maps: " << nMaps << ", KFs: " << nKFs << ", MPs: " << nMPs << ", Matches: " << mnTracked;
     if (mnTrackedVO > 0) {
       s << ", + VO matches: " << mnTrackedVO;
@@ -308,7 +313,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat& im, int nState, cv::Mat& imText) {
   }
 
   int      baseline = 0;
-  cv::Size textSize = cv::getTextSize(s.str(), cv::FONT_HERSHEY_PLAIN, 1, 1, &baseline);
+  const cv::Size textSize = cv::getTextSize(s.str(), cv::FONT_HERSHEY_PLAIN, 1, 1, &baseline);
 
   imText = cv::Mat(im.rows + textSize.height + 10, im.cols, im.type());
   im.copyTo(imText.rowRange(0, im.rows).colRange(0, im.cols));
@@ -326,7 +331,7 @@ void FrameDrawer::DrawTextInfo(cv::Mat& im, int nState, cv::Mat& imText) {
 }
 
 void FrameDrawer::Update(Tracking* pTracker) {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   pTracker->mImGray.copyTo(mIm);
   mvCurrentKeys  = pTracker->mCurrentFrame.mvKeys;
   mThDepth       = pTracker->mCurrentFrame.mThDepth;

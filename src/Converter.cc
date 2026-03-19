@@ -39,24 +39,24 @@ g2o::SE3Quat Converter::toSE3Quat(const cv::Mat& cvT) {
     cvT.at<float>(1, 1), cvT.at<float>(1, 2), cvT.at<float>(2, 0), cvT.at<float>(2, 1),
     cvT.at<float>(2, 2);
 
-  Eigen::Matrix<double, 3, 1> t(cvT.at<float>(0, 3), cvT.at<float>(1, 3), cvT.at<float>(2, 3));
+  const Eigen::Matrix<double, 3, 1> t(cvT.at<float>(0, 3), cvT.at<float>(1, 3), cvT.at<float>(2, 3));
 
-  return g2o::SE3Quat(R, t);
+  return {R, t};
 }
 
 g2o::SE3Quat Converter::toSE3Quat(const Sophus::SE3f& T) {
-  return g2o::SE3Quat(T.unit_quaternion().cast<double>(), T.translation().cast<double>());
+  return {T.unit_quaternion().cast<double>(), T.translation().cast<double>()};
 }
 
 cv::Mat Converter::toCvMat(const g2o::SE3Quat& SE3) {
-  Eigen::Matrix<double, 4, 4> eigMat = SE3.to_homogeneous_matrix();
+  const Eigen::Matrix<double, 4, 4> eigMat = SE3.to_homogeneous_matrix();
   return toCvMat(eigMat);
 }
 
 cv::Mat Converter::toCvMat(const g2o::Sim3& Sim3) {
-  Eigen::Matrix3d eigR = Sim3.rotation().toRotationMatrix();
-  Eigen::Vector3d eigt = Sim3.translation();
-  double          s    = Sim3.scale();
+  const Eigen::Matrix3d eigR = Sim3.rotation().toRotationMatrix();
+  const auto& eigt = Sim3.translation();
+  const double          s    = Sim3.scale();
   return toCvSE3(s * eigR, eigt);
 }
 
@@ -235,7 +235,7 @@ Eigen::Matrix<float, 4, 4> Converter::toMatrix4f(const cv::Mat& cvMat4) {
 }
 
 std::vector<float> Converter::toQuaternion(const cv::Mat& M) {
-  Eigen::Matrix<double, 3, 3> eigMat = toMatrix3d(M);
+  const Eigen::Matrix<double, 3, 3> eigMat = toMatrix3d(M);
   Eigen::Quaterniond          q(eigMat);
 
   std::vector<float> v(4);
@@ -248,35 +248,33 @@ std::vector<float> Converter::toQuaternion(const cv::Mat& M) {
 }
 
 cv::Mat Converter::tocvSkewMatrix(const cv::Mat& v) {
-  return (
-    cv::Mat_<float>(3, 3) << 0,
-    -v.at<float>(2),
-    v.at<float>(1),
-    v.at<float>(2),
-    0,
-    -v.at<float>(0),
-    -v.at<float>(1),
-    v.at<float>(0),
-    0
-  );
+  // clang-format off
+  cv::Mat skew = (cv::Mat_<float>(3, 3) <<
+            0,               -v.at<float>(2),  v.at<float>(1),
+            v.at<float>(2),   0,              -v.at<float>(0),
+           -v.at<float>(1),   v.at<float>(0),  0);
+  // clang-format on
+  return skew;
 }
 
 bool Converter::isRotationMatrix(const cv::Mat& R) {
   cv::Mat Rt;
   cv::transpose(R, Rt);
-  cv::Mat shouldBeIdentity = Rt * R;
-  cv::Mat I                = cv::Mat::eye(3, 3, shouldBeIdentity.type());
+  const cv::Mat shouldBeIdentity = Rt * R;
+  const cv::Mat I                = cv::Mat::eye(3, 3, shouldBeIdentity.type());
 
   return cv::norm(I, shouldBeIdentity) < 1e-6;
 }
 
 std::vector<float> Converter::toEuler(const cv::Mat& R) {
   assert(isRotationMatrix(R));
-  float sy = sqrt(R.at<float>(0, 0) * R.at<float>(0, 0) + R.at<float>(1, 0) * R.at<float>(1, 0));
+  const float sy = sqrt(R.at<float>(0, 0) * R.at<float>(0, 0) + R.at<float>(1, 0) * R.at<float>(1, 0));
 
-  bool singular = sy < 1e-6; // If
+  const bool singular = sy < 1e-6; // If
 
-  float x, y, z;
+  float x = 0.0F;
+  float y = 0.0F;
+  float z = 0.0F;
   if (!singular) {
     x = atan2(R.at<float>(2, 1), R.at<float>(2, 2));
     y = atan2(-R.at<float>(2, 0), sy);
@@ -296,19 +294,19 @@ std::vector<float> Converter::toEuler(const cv::Mat& R) {
 }
 
 Sophus::SE3<float> Converter::toSophus(const cv::Mat& T) {
-  Eigen::Matrix<double, 3, 3> eigMat = toMatrix3d(T.rowRange(0, 3).colRange(0, 3));
-  Eigen::Quaternionf          q(eigMat.cast<float>());
+  const Eigen::Matrix<double, 3, 3> eigMat = toMatrix3d(T.rowRange(0, 3).colRange(0, 3));
+  const Eigen::Quaternionf          q(eigMat.cast<float>());
 
-  Eigen::Matrix<float, 3, 1> t = toVector3d(T.rowRange(0, 3).col(3)).cast<float>();
+  const Eigen::Matrix<float, 3, 1> t = toVector3d(T.rowRange(0, 3).col(3)).cast<float>();
 
-  return Sophus::SE3<float>(q, t);
+  return {q, t};
 }
 
 Sophus::Sim3f Converter::toSophus(const g2o::Sim3& S) {
-  return Sophus::Sim3f(
+  return {
     Sophus::RxSO3d((float)S.scale(), S.rotation().matrix()).cast<float>(),
     S.translation().cast<float>()
-  );
+  };
 }
 
 } // namespace ORB_SLAM3

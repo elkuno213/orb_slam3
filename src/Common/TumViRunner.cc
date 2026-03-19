@@ -56,12 +56,12 @@ void loadMonocularImages(
     }
 
     // CSV format: "timestamp_ns,image_filename".
-    std::size_t pos = s.find(',');
-    std::string ts  = s.substr(0, pos);
-    std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
+    const std::size_t pos = s.find(',');
+    const std::string ts  = s.substr(0, pos);
+    const std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
 
     filenames.push_back((image_path / img).string());
-    double t = std::stod(ts);
+    const double t = std::stod(ts);
     timestamps.push_back(t * 1e-9);
   }
 }
@@ -92,13 +92,13 @@ void loadStereoImages(
       continue;
     }
 
-    std::size_t pos = s.find(',');
-    std::string ts  = s.substr(0, pos);
-    std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
+    const std::size_t pos = s.find(',');
+    const std::string ts  = s.substr(0, pos);
+    const std::string img = (pos != std::string::npos) ? s.substr(pos + 1) : ts + ".png";
 
     left_filenames.push_back((left_path / img).string());
     right_filenames.push_back((right_path / img).string());
-    double t = std::stod(ts);
+    const double t = std::stod(ts);
     timestamps.push_back(t * 1e-9);
   }
 }
@@ -147,8 +147,8 @@ void loadImu(
     data[6] = std::stod(item);
 
     timestamps.push_back(data[0] * 1e-9);
-    acc.push_back(cv::Point3f(data[4], data[5], data[6]));
-    gyro.push_back(cv::Point3f(data[1], data[2], data[3]));
+    acc.emplace_back(data[4], data[5], data[6]);
+    gyro.emplace_back(data[1], data[2], data[3]);
   }
 }
 

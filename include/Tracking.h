@@ -59,9 +59,9 @@ public:
     Atlas*             pAtlas,
     KeyFrameDatabase*  pKFDB,
     const std::string& strSettingPath,
-    const int          sensor,
+    int                sensor,
     Settings*          settings,
-    const std::string& _nameSeq = std::string()
+    const std::string& /*_nameSeq*/ = std::string()
   );
 
   ~Tracking();
@@ -89,7 +89,7 @@ public:
   void SetLoopClosing(LoopClosing* pLoopClosing);
   void SetViewer(Viewer* pViewer);
   void SetStepByStep(bool bSet);
-  bool GetStepByStep();
+  bool GetStepByStep() const;
 
   // Load new settings
   // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -99,7 +99,7 @@ public:
   // camera.
   void InformOnlyTracking(const bool& flag);
 
-  void      UpdateFrameIMU(const float s, const IMU::Bias& b, KeyFrame* pCurrentKeyFrame);
+  void      UpdateFrameIMU(float s, const IMU::Bias& b, KeyFrame* pCurrentKeyFrame);
   KeyFrame* GetLastKeyFrame() {
     return mpLastKeyFrame;
   }
@@ -109,16 +109,20 @@ public:
 
   //--
   void NewDataset();
-  int  GetNumberDataset();
-  int  GetMatchesInliers();
+  int  GetNumberDataset() const;
+  int  GetMatchesInliers() const;
 
   // DEBUG
   void SaveSubTrajectory(
-    std::string strNameFile_frames, std::string strNameFile_kf, std::string strFolder = ""
+    const std::string& strNameFile_frames,
+    const std::string& strNameFile_kf,
+    const std::string& strFolder = ""
   );
-  void SaveSubTrajectory(std::string strNameFile_frames, std::string strNameFile_kf, Map* pMap);
+  void SaveSubTrajectory(
+    const std::string& strNameFile_frames, const std::string& strNameFile_kf, Map* pMap
+  );
 
-  float GetImageScale();
+  float GetImageScale() const;
 
 #ifdef REGISTER_LOOP
   void RequestStop();
@@ -127,7 +131,6 @@ public:
   bool stopRequested();
 #endif
 
-public:
   // Tracking states
   enum eTrackingState {
     SYSTEM_NOT_READY = -1,
@@ -139,7 +142,7 @@ public:
     OK_KLT           = 5
   };
 
-  eTrackingState mState;
+  eTrackingState mState{NO_IMAGES_YET};
   eTrackingState mLastProcessedState;
 
   // Input sensor
@@ -166,11 +169,11 @@ public:
   std::list<bool>         mlbLost;
 
   // frames with estimated pose
-  int  mTrackedFr;
-  bool mbStep;
+  int  mTrackedFr{0};
+  bool mbStep{false};
 
   // True if local mapping is deactivated and we are performing only localization
-  bool mbOnlyTracking;
+  bool mbOnlyTracking{false};
 
   void Reset(bool bLocMap = false);
   void ResetActiveMap(bool bLocMap = false);
@@ -238,7 +241,7 @@ protected:
   // Reset IMU biases and compute frame velocity
   void ResetFrameIMU();
 
-  bool mbMapUpdated;
+  bool mbMapUpdated{false};
 
   // Imu preintegration from last frame
   IMU::Preintegrated* mpImuPreintegratedFromLastKF;
@@ -260,7 +263,7 @@ protected:
   // points in the map. Still tracking will continue if there are enough matches with temporal
   // points. In that case we are doing visual odometry. The system will try to do relocalization to
   // recover "zero-drift" localization to the map.
-  bool mbVO;
+  bool mbVO{false};
 
   // Other Thread Pointers
   LocalMapping* mpLocalMapper;
@@ -275,7 +278,7 @@ protected:
   KeyFrameDatabase* mpKeyFrameDB;
 
   // Initalization (only for monocular)
-  bool mbReadyToInitializate;
+  bool mbReadyToInitializate{false};
   bool mbSetInit;
 
   // Local Map
@@ -287,10 +290,10 @@ protected:
   System* mpSystem;
 
   // Drawers
-  Viewer*      mpViewer;
+  Viewer*      mpViewer{nullptr};
   FrameDrawer* mpFrameDrawer;
   MapDrawer*   mpMapDrawer;
-  bool         bStepByStep;
+  bool         bStepByStep{false};
 
   // Atlas
   Atlas* mpAtlas;
@@ -325,17 +328,17 @@ protected:
   int mnMatchesInliers;
 
   // Last Frame, KeyFrame and Relocalisation Info
-  KeyFrame*    mpLastKeyFrame;
+  KeyFrame*    mpLastKeyFrame{nullptr};
   unsigned int mnLastKeyFrameId;
-  unsigned int mnLastRelocFrameId;
+  unsigned int mnLastRelocFrameId{0};
   double       mTimeStampLost;
-  double       time_recently_lost;
+  double       time_recently_lost{5.0};
 
-  unsigned int mnFirstFrameId;
-  unsigned int mnInitialFrameId;
+  unsigned int mnFirstFrameId{0};
+  unsigned int mnInitialFrameId{0};
   unsigned int mnLastInitFrameId;
 
-  bool mbCreatedMap;
+  bool mbCreatedMap{false};
 
   // Motion Model
   bool         mbVelocity{false};
@@ -358,7 +361,7 @@ protected:
   double        mTime_LocalMapTrack;
   double        mTime_NewKF_Dec;
 
-  GeometricCamera *mpCamera, *mpCamera2;
+  GeometricCamera *mpCamera, *mpCamera2{nullptr};
 
   int initID, lastID;
 

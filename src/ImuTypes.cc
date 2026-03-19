@@ -21,9 +21,7 @@
 #include "Converter.h"
 #include "GeometricTools.h"
 
-namespace ORB_SLAM3 {
-
-namespace IMU {
+namespace ORB_SLAM3::IMU {
 
 const float eps = 1e-4;
 
@@ -44,7 +42,7 @@ Point::Point(const cv::Point3f Acc, const cv::Point3f Gyro, const double& timest
 }
 
 Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f& R) {
-  Eigen::JacobiSVD<Eigen::Matrix3f> svd(R, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  const Eigen::JacobiSVD<Eigen::Matrix3f> svd(R, Eigen::ComputeFullU | Eigen::ComputeFullV);
   return svd.matrixU() * svd.matrixV().transpose();
 }
 
@@ -52,14 +50,14 @@ Eigen::Matrix3f RightJacobianSO3(const float& x, const float& y, const float& z)
   Eigen::Matrix3f I;
   I.setIdentity();
   const float     d2 = x * x + y * y + z * z;
-  const float     d  = sqrt(d2);
+  const float     d  = std::sqrt(d2);
   Eigen::Vector3f v;
   v << x, y, z;
-  Eigen::Matrix3f W = Sophus::SO3f::hat(v);
+  const Eigen::Matrix3f W = Sophus::SO3f::hat(v);
   if (d < eps) {
     return I;
   } else {
-    return I - W * (1.0f - cos(d)) / d2 + W * W * (d - sin(d)) / (d2 * d);
+    return I - W * (1.0F - std::cos(d)) / d2 + W * W * (d - std::sin(d)) / (d2 * d);
   }
 }
 
@@ -71,15 +69,15 @@ Eigen::Matrix3f InverseRightJacobianSO3(const float& x, const float& y, const fl
   Eigen::Matrix3f I;
   I.setIdentity();
   const float     d2 = x * x + y * y + z * z;
-  const float     d  = sqrt(d2);
+  const float     d  = std::sqrt(d2);
   Eigen::Vector3f v;
   v << x, y, z;
-  Eigen::Matrix3f W = Sophus::SO3f::hat(v);
+  const Eigen::Matrix3f W = Sophus::SO3f::hat(v);
 
   if (d < eps) {
     return I;
   } else {
-    return I + W / 2 + W * W * (1.0f / d2 - (1.0f + cos(d)) / (2.0f * d * sin(d)));
+    return I + W / 2 + W * W * (1.0F / d2 - (1.0F + std::cos(d)) / (2.0F * d * std::sin(d)));
   }
 }
 
@@ -87,8 +85,7 @@ Eigen::Matrix3f InverseRightJacobianSO3(const Eigen::Vector3f& v) {
   return InverseRightJacobianSO3(v(0), v(1), v(2));
 }
 
-IntegratedRotation::IntegratedRotation() {
-}
+IntegratedRotation::IntegratedRotation() = default;
 
 IntegratedRotation::IntegratedRotation(
   const Eigen::Vector3f& angVel, const Bias& imuBias, const float& time
@@ -98,26 +95,25 @@ IntegratedRotation::IntegratedRotation(
   const float z = (angVel(2) - imuBias.bwz) * time;
 
   const float d2 = x * x + y * y + z * z;
-  const float d  = sqrt(d2);
+  const float d  = std::sqrt(d2);
 
   Eigen::Vector3f v;
   v << x, y, z;
-  Eigen::Matrix3f W = Sophus::SO3f::hat(v);
+  const Eigen::Matrix3f W = Sophus::SO3f::hat(v);
   if (d < eps) {
     deltaR = Eigen::Matrix3f::Identity() + W;
     rightJ = Eigen::Matrix3f::Identity();
   } else {
-    deltaR = Eigen::Matrix3f::Identity() + W * sin(d) / d + W * W * (1.0f - cos(d)) / d2;
-    rightJ
-      = Eigen::Matrix3f::Identity() - W * (1.0f - cos(d)) / d2 + W * W * (d - sin(d)) / (d2 * d);
+    deltaR
+      = Eigen::Matrix3f::Identity() + W * std::sin(d) / d + W * W * (1.0F - std::cos(d)) / d2;
+    rightJ = Eigen::Matrix3f::Identity() - W * (1.0F - std::cos(d)) / d2
+           + W * W * (d - std::sin(d)) / (d2 * d);
   }
 }
 
-Preintegrated::Preintegrated() {
-}
+Preintegrated::Preintegrated() = default;
 
-Preintegrated::~Preintegrated() {
-}
+Preintegrated::~Preintegrated() = default;
 
 Preintegrated::Preintegrated(const Bias& b_, const Calib& calib) {
   Nga     = calib.Cov;
@@ -186,23 +182,23 @@ void Preintegrated::Initialize(const Bias& b_) {
   bu = b_;
   avgA.setZero();
   avgW.setZero();
-  dT = 0.0f;
+  dT = 0.0F;
   mvMeasurements.clear();
 }
 
 void Preintegrated::Reintegrate() {
-  std::unique_lock<std::mutex>  lock(mMutex);
-  const std::vector<integrable> aux = mvMeasurements;
+  const std::unique_lock<std::mutex> lock(mMutex);
+  const std::vector<integrable>      aux = mvMeasurements;
   Initialize(bu);
-  for (std::size_t i = 0; i < aux.size(); i++) {
-    IntegrateNewMeasurement(aux[i].a, aux[i].w, aux[i].t);
+  for (const auto& measurement : aux) {
+    IntegrateNewMeasurement(measurement.a, measurement.w, measurement.t);
   }
 }
 
 void Preintegrated::IntegrateNewMeasurement(
   const Eigen::Vector3f& acceleration, const Eigen::Vector3f& angVel, const float& dt
 ) {
-  mvMeasurements.push_back(integrable(acceleration, angVel, dt));
+  mvMeasurements.emplace_back(acceleration, angVel, dt);
 
   // Position is updated firstly, as it depends on previously computed velocity and rotation.
   // Velocity is updated secondly, as it depends on previously computed rotation.
@@ -214,7 +210,8 @@ void Preintegrated::IntegrateNewMeasurement(
   Eigen::Matrix<float, 9, 6> B;
   B.setZero();
 
-  Eigen::Vector3f acc, accW;
+  Eigen::Vector3f acc;
+  Eigen::Vector3f accW;
   acc << acceleration(0) - b.bax, acceleration(1) - b.bay, acceleration(2) - b.baz;
   accW << angVel(0) - b.bwx, angVel(1) - b.bwy, angVel(2) - b.bwz;
 
@@ -222,21 +219,21 @@ void Preintegrated::IntegrateNewMeasurement(
   avgW = (dT * avgW + accW * dt) / (dT + dt);
 
   // Update delta position dP and velocity dV (rely on no-updated delta rotation)
-  dP = dP + dV * dt + 0.5f * dR * acc * dt * dt;
+  dP = dP + dV * dt + 0.5F * dR * acc * dt * dt;
   dV = dV + dR * acc * dt;
 
   // Compute velocity and position parts of matrices A and B (rely on non-updated delta rotation)
-  Eigen::Matrix<float, 3, 3> Wacc = Sophus::SO3f::hat(acc);
+  const Eigen::Matrix<float, 3, 3> Wacc = Sophus::SO3f::hat(acc);
 
   A.block<3, 3>(3, 0) = -dR * dt * Wacc;
-  A.block<3, 3>(6, 0) = -0.5f * dR * dt * dt * Wacc;
+  A.block<3, 3>(6, 0) = -0.5F * dR * dt * dt * Wacc;
   A.block<3, 3>(6, 3) = Eigen::DiagonalMatrix<float, 3>(dt, dt, dt);
   B.block<3, 3>(3, 3) = dR * dt;
-  B.block<3, 3>(6, 3) = 0.5f * dR * dt * dt;
+  B.block<3, 3>(6, 3) = 0.5F * dR * dt * dt;
 
   // Update position and velocity jacobians wrt bias correction
-  JPa = JPa + JVa * dt - 0.5f * dR * dt * dt;
-  JPg = JPg + JVg * dt - 0.5f * dR * dt * dt * Wacc * JRg;
+  JPa = JPa + JVa * dt - 0.5F * dR * dt * dt;
+  JPg = JPg + JVg * dt - 0.5F * dR * dt * dt * Wacc * JRg;
   JVa = JVa - dR * dt;
   JVg = JVg - dR * dt * Wacc * JRg;
 
@@ -264,8 +261,8 @@ void Preintegrated::MergePrevious(Preintegrated* pPrev) {
     return;
   }
 
-  std::unique_lock<std::mutex> lock1(mMutex);
-  std::unique_lock<std::mutex> lock2(pPrev->mMutex);
+  const std::unique_lock<std::mutex> lock1(mMutex);
+  const std::unique_lock<std::mutex> lock2(pPrev->mMutex);
   Bias                         bav;
   bav.bwx = bu.bwx;
   bav.bwy = bu.bwy;
@@ -278,16 +275,16 @@ void Preintegrated::MergePrevious(Preintegrated* pPrev) {
   const std::vector<integrable> aux2 = mvMeasurements;
 
   Initialize(bav);
-  for (std::size_t i = 0; i < aux1.size(); i++) {
-    IntegrateNewMeasurement(aux1[i].a, aux1[i].w, aux1[i].t);
+  for (const auto& measurement : aux1) {
+    IntegrateNewMeasurement(measurement.a, measurement.w, measurement.t);
   }
-  for (std::size_t i = 0; i < aux2.size(); i++) {
-    IntegrateNewMeasurement(aux2[i].a, aux2[i].w, aux2[i].t);
+  for (const auto& measurement : aux2) {
+    IntegrateNewMeasurement(measurement.a, measurement.w, measurement.t);
   }
 }
 
 void Preintegrated::SetNewBias(const Bias& bu_) {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   bu = bu_;
 
   db(0) = bu_.bwx - b.bwx;
@@ -299,82 +296,84 @@ void Preintegrated::SetNewBias(const Bias& bu_) {
 }
 
 IMU::Bias Preintegrated::GetDeltaBias(const Bias& b_) {
-  std::unique_lock<std::mutex> lock(mMutex);
-  return IMU::Bias(
+  const std::unique_lock<std::mutex> lock(mMutex);
+  return {
     b_.bax - b.bax,
     b_.bay - b.bay,
     b_.baz - b.baz,
     b_.bwx - b.bwx,
     b_.bwy - b.bwy,
     b_.bwz - b.bwz
-  );
+  };
 }
 
 Eigen::Matrix3f Preintegrated::GetDeltaRotation(const Bias& b_) {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   Eigen::Vector3f              dbg;
   dbg << b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz;
   return NormalizeRotation(dR * Sophus::SO3f::exp(JRg * dbg).matrix());
 }
 
 Eigen::Vector3f Preintegrated::GetDeltaVelocity(const Bias& b_) {
-  std::unique_lock<std::mutex> lock(mMutex);
-  Eigen::Vector3f              dbg, dba;
+  const std::unique_lock<std::mutex> lock(mMutex);
+  Eigen::Vector3f              dbg;
+  Eigen::Vector3f              dba;
   dbg << b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz;
   dba << b_.bax - b.bax, b_.bay - b.bay, b_.baz - b.baz;
   return dV + JVg * dbg + JVa * dba;
 }
 
 Eigen::Vector3f Preintegrated::GetDeltaPosition(const Bias& b_) {
-  std::unique_lock<std::mutex> lock(mMutex);
-  Eigen::Vector3f              dbg, dba;
+  const std::unique_lock<std::mutex> lock(mMutex);
+  Eigen::Vector3f              dbg;
+  Eigen::Vector3f              dba;
   dbg << b_.bwx - b.bwx, b_.bwy - b.bwy, b_.bwz - b.bwz;
   dba << b_.bax - b.bax, b_.bay - b.bay, b_.baz - b.baz;
   return dP + JPg * dbg + JPa * dba;
 }
 
 Eigen::Matrix3f Preintegrated::GetUpdatedDeltaRotation() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return NormalizeRotation(dR * Sophus::SO3f::exp(JRg * db.head(3)).matrix());
 }
 
 Eigen::Vector3f Preintegrated::GetUpdatedDeltaVelocity() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return dV + JVg * db.head(3) + JVa * db.tail(3);
 }
 
 Eigen::Vector3f Preintegrated::GetUpdatedDeltaPosition() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return dP + JPg * db.head(3) + JPa * db.tail(3);
 }
 
 Eigen::Matrix3f Preintegrated::GetOriginalDeltaRotation() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return dR;
 }
 
 Eigen::Vector3f Preintegrated::GetOriginalDeltaVelocity() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return dV;
 }
 
 Eigen::Vector3f Preintegrated::GetOriginalDeltaPosition() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return dP;
 }
 
 Bias Preintegrated::GetOriginalBias() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return b;
 }
 
 Bias Preintegrated::GetUpdatedBias() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return bu;
 }
 
 Eigen::Matrix<float, 6, 1> Preintegrated::GetDeltaBias() {
-  std::unique_lock<std::mutex> lock(mMutex);
+  const std::unique_lock<std::mutex> lock(mMutex);
   return db;
 }
 
@@ -473,6 +472,4 @@ Calib::Calib(const Calib& calib) {
   CovWalk = calib.CovWalk;
 }
 
-} // namespace IMU
-
-} // namespace ORB_SLAM3
+} // namespace ORB_SLAM3::IMU

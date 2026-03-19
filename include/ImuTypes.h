@@ -20,6 +20,7 @@
 #pragma once
 
 #include <mutex>
+#include <utility>
 #include <vector>
 #include <Eigen/Core>
 #include <boost/serialization/access.hpp>
@@ -29,9 +30,7 @@
 #include <sophus/se3.hpp>
 #include "SerializationUtils.h"
 
-namespace ORB_SLAM3 {
-
-namespace IMU {
+namespace ORB_SLAM3::IMU {
 
 const float GRAVITY_VALUE = 9.81;
 
@@ -47,9 +46,8 @@ public:
     const float&  ang_vel_z,
     const double& timestamp
   );
-  Point(const cv::Point3f Acc, const cv::Point3f Gyro, const double& timestamp);
+  Point(cv::Point3f Acc, cv::Point3f Gyro, const double& timestamp);
 
-public:
   Eigen::Vector3f a;
   Eigen::Vector3f w;
   double          t;
@@ -60,7 +58,7 @@ public:
 class Bias {
   friend class boost::serialization::access;
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int /*version*/) {
     ar& bax;
     ar& bay;
     ar& baz;
@@ -83,7 +81,6 @@ public:
   void                 CopyFrom(Bias& b);
   friend std::ostream& operator<<(std::ostream& out, const Bias& b);
 
-public:
   float bax, bay, baz;
   float bwx, bwy, bwz;
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -124,7 +121,6 @@ public:
     const float&              naw
   );
 
-public:
   // Sophus/Eigen implementation
   Sophus::SE3<float>              mTcb;
   Sophus::SE3<float>              mTbc;
@@ -138,7 +134,6 @@ public:
   IntegratedRotation();
   IntegratedRotation(const Eigen::Vector3f& angVel, const Bias& imuBias, const float& time);
 
-public:
   float           deltaT; // integration time
   Eigen::Matrix3f deltaR;
   Eigen::Matrix3f rightJ; // right jacobian
@@ -149,7 +144,7 @@ public:
 class Preintegrated {
   friend class boost::serialization::access;
   template <class Archive>
-  void serialize(Archive& ar, const unsigned int version) {
+  void serialize(Archive& ar, const unsigned int /*version*/) {
     ar& dT;
     ar& boost::serialization::make_array(C.data(), C.size());
     ar& boost::serialization::make_array(Info.data(), Info.size());
@@ -205,7 +200,6 @@ public:
   Bias GetOriginalBias();
   Bias GetUpdatedBias();
 
-public:
   float                           dT;
   Eigen::Matrix<float, 15, 15>    C;
   Eigen::Matrix<float, 15, 15>    Info;
@@ -227,17 +221,16 @@ private:
 
   struct integrable {
     template <class Archive>
-    void serialize(Archive& ar, const unsigned int version) {
+    void serialize(Archive& ar, const unsigned int /*version*/) {
       ar& boost::serialization::make_array(a.data(), a.size());
       ar& boost::serialization::make_array(w.data(), w.size());
       ar& t;
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    integrable() {
-    }
-    integrable(const Eigen::Vector3f& a_, const Eigen::Vector3f& w_, const float& t_)
-      : a(a_), w(w_), t(t_) {
+    integrable() = default;
+    integrable(Eigen::Vector3f a_, Eigen::Vector3f w_, const float& t_)
+      : a(std::move(a_)), w(std::move(w_)), t(t_) {
     }
     Eigen::Vector3f a, w;
     float           t;
@@ -257,7 +250,4 @@ Eigen::Matrix3f InverseRightJacobianSO3(const Eigen::Vector3f& v);
 
 Eigen::Matrix3f NormalizeRotation(const Eigen::Matrix3f& R);
 
-} // namespace IMU
-
-} // namespace ORB_SLAM3
-
+} // namespace ORB_SLAM3::IMU

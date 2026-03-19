@@ -92,47 +92,47 @@ public:
   /** A 3-vector of unit length used to describe landmark observations/bearings
    *  in camera frames (always expressed in camera frames)
    */
-  typedef Eigen::Vector3d bearingVector_t;
+  using bearingVector_t = Eigen::Vector3d;
 
   /** An array of bearing-vectors */
-  typedef std::vector<bearingVector_t, Eigen::aligned_allocator<bearingVector_t>> bearingVectors_t;
+  using bearingVectors_t = std::vector<bearingVector_t, Eigen::aligned_allocator<bearingVector_t>>;
 
   /** A 2-matrix containing the 2D covariance information of a bearing vector
    */
-  typedef Eigen::Matrix2d cov2_mat_t;
+  using cov2_mat_t = Eigen::Matrix2d;
 
   /** A 3-matrix containing the 3D covariance information of a bearing vector */
-  typedef Eigen::Matrix3d cov3_mat_t;
+  using cov3_mat_t = Eigen::Matrix3d;
 
   /** An array of 3D covariance matrices */
-  typedef std::vector<cov3_mat_t, Eigen::aligned_allocator<cov3_mat_t>> cov3_mats_t;
+  using cov3_mats_t = std::vector<cov3_mat_t, Eigen::aligned_allocator<cov3_mat_t>>;
 
   /** A 3-vector describing a point in 3D-space */
-  typedef Eigen::Vector3d point_t;
+  using point_t = Eigen::Vector3d;
 
   /** An array of 3D-points */
-  typedef std::vector<point_t, Eigen::aligned_allocator<point_t>> points_t;
+  using points_t = std::vector<point_t, Eigen::aligned_allocator<point_t>>;
 
   /** A homogeneous 3-vector describing a point in 3D-space */
-  typedef Eigen::Vector4d point4_t;
+  using point4_t = Eigen::Vector4d;
 
   /** An array of homogeneous 3D-points */
-  typedef std::vector<point4_t, Eigen::aligned_allocator<point4_t>> points4_t;
+  using points4_t = std::vector<point4_t, Eigen::aligned_allocator<point4_t>>;
 
   /** A 3-vector containing the rodrigues parameters of a rotation matrix */
-  typedef Eigen::Vector3d rodrigues_t;
+  using rodrigues_t = Eigen::Vector3d;
 
   /** A rotation matrix */
-  typedef Eigen::Matrix3d rotation_t;
+  using rotation_t = Eigen::Matrix3d;
 
   /** A 3x4 transformation matrix containing rotation \f$ \mathbf{R} \f$ and
    *  translation \f$ \mathbf{t} \f$ as follows:
    *  \f$ \left( \begin{array}{cc} \mathbf{R} & \mathbf{t} \end{array} \right) \f$
    */
-  typedef Eigen::Matrix<double, 3, 4> transformation_t;
+  using transformation_t = Eigen::Matrix<double, 3, 4>;
 
   /** A 3-vector describing a translation/camera position */
-  typedef Eigen::Vector3d translation_t;
+  using translation_t = Eigen::Vector3d;
 
 private:
   void CheckInliers();
@@ -157,7 +157,7 @@ private:
     Eigen::VectorXd&                    x,
     const points_t&                     pts,
     const std::vector<Eigen::MatrixXd>& nullspaces,
-    const Eigen::SparseMatrix<double>   Kll,
+    const Eigen::SparseMatrix<double>&  Kll,
     bool                                use_cov
   );
 
@@ -221,12 +221,12 @@ private:
   double            mti[3];
   Eigen::Matrix4f   mTcwi;
   std::vector<bool> mvbInliersi;
-  int               mnInliersi;
+  int               mnInliersi{0};
 
   // Current Ransac State
-  int               mnIterations;
+  int               mnIterations{0};
   std::vector<bool> mvbBestInliers;
-  int               mnBestInliers;
+  int               mnBestInliers{0};
   Eigen::Matrix4f   mBestTcw;
 
   // Refined
@@ -235,7 +235,7 @@ private:
   int               mnRefinedInliers;
 
   // Number of Correspondences
-  int N;
+  int N{0};
 
   // Indices for random selection [0 .. N-1]
   std::vector<std::size_t> mvAllIndices;

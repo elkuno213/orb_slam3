@@ -56,7 +56,7 @@
 namespace ORB_SLAM3 {
 
 MLPnPsolver::MLPnPsolver(const Frame& F, const std::vector<MapPoint*>& vpMapPointMatches)
-  : mnInliersi(0), mnIterations(0), mnBestInliers(0), N(0), mpCamera(F.mpCamera) {
+  : mpCamera(F.mpCamera) {
   mvpMapPointMatches = vpMapPointMatches;
   mvBearingVecs.reserve(F.mvpMapPoints.size());
   mvP2D.reserve(F.mvpMapPoints.size());
@@ -82,12 +82,12 @@ MLPnPsolver::MLPnPsolver(const Frame& F, const std::vector<MapPoint*>& vpMapPoin
         // Bearing vector should be normalized
         cv::Point3f cv_br = mpCamera->unproject(kp.pt);
         cv_br             /= cv_br.z;
-        bearingVector_t br(cv_br.x, cv_br.y, cv_br.z);
+        const bearingVector_t br(cv_br.x, cv_br.y, cv_br.z);
         mvBearingVecs.push_back(br);
 
         // 3D coordinates
         Eigen::Matrix<float, 3, 1> posEig = pMP->GetWorldPos();
-        point_t                    pos(posEig(0), posEig(1), posEig(2));
+        const point_t              pos(posEig(0), posEig(1), posEig(2));
         mvP3Dw.push_back(pos);
 
         mvKeyPointIndices.push_back(i);
@@ -131,9 +131,9 @@ bool MLPnPsolver::iterate(
 
     // Get min set of points
     for (short i = 0; i < mRansacMinSet; ++i) {
-      int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
+      const int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size() - 1);
 
-      int idx = vAvailableIndices[randi];
+      const int idx = vAvailableIndices[randi];
 
       bearingVecs[i] = mvBearingVecs[idx];
       p3DS[i]        = mvP3Dw[idx];
@@ -144,7 +144,7 @@ bool MLPnPsolver::iterate(
     }
 
     // By the moment, we are using MLPnP without covariance info
-    cov3_mats_t covs(1);
+    const cov3_mats_t covs(1);
 
     // Result
     transformation_t result;
@@ -186,8 +186,8 @@ bool MLPnPsolver::iterate(
         mBestTcw.block<3, 3>(0, 0) = Converter::toMatrix3f(Rcw);
         mBestTcw.block<3, 1>(0, 3) = Converter::toVector3f(tcw);
 
-        Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
-        Eigen::Vector3d                              eigtcw(mti);
+        const Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
+        const Eigen::Vector3d                              eigtcw(mti);
       }
 
       if (Refine()) {
@@ -250,7 +250,7 @@ void MLPnPsolver::SetRansacParameters(
   }
 
   // Set RANSAC iterations according to probability, epsilon, and max iterations
-  int nIterations;
+  int nIterations = 0;
 
   if (mRansacMinInliers == N) {
     nIterations = 1;
@@ -270,21 +270,21 @@ void MLPnPsolver::CheckInliers() {
   mnInliersi = 0;
 
   for (int i = 0; i < N; i++) {
-    point_t     p = mvP3Dw[i];
-    cv::Point3f P3Dw(p(0), p(1), p(2));
-    cv::Point2f P2D = mvP2D[i];
+    point_t           p = mvP3Dw[i];
+    const cv::Point3f P3Dw(p(0), p(1), p(2));
+    const cv::Point2f P2D = mvP2D[i];
 
-    float xc = mRi[0][0] * P3Dw.x + mRi[0][1] * P3Dw.y + mRi[0][2] * P3Dw.z + mti[0];
-    float yc = mRi[1][0] * P3Dw.x + mRi[1][1] * P3Dw.y + mRi[1][2] * P3Dw.z + mti[1];
-    float zc = mRi[2][0] * P3Dw.x + mRi[2][1] * P3Dw.y + mRi[2][2] * P3Dw.z + mti[2];
+    const float xc = mRi[0][0] * P3Dw.x + mRi[0][1] * P3Dw.y + mRi[0][2] * P3Dw.z + mti[0];
+    const float yc = mRi[1][0] * P3Dw.x + mRi[1][1] * P3Dw.y + mRi[1][2] * P3Dw.z + mti[1];
+    const float zc = mRi[2][0] * P3Dw.x + mRi[2][1] * P3Dw.y + mRi[2][2] * P3Dw.z + mti[2];
 
-    cv::Point3f P3Dc(xc, yc, zc);
-    cv::Point2f uv = mpCamera->project(P3Dc);
+    const cv::Point3f P3Dc(xc, yc, zc);
+    const cv::Point2f uv = mpCamera->project(P3Dc);
 
-    float distX = P2D.x - uv.x;
-    float distY = P2D.y - uv.y;
+    const float distX = P2D.x - uv.x;
+    const float distY = P2D.y - uv.y;
 
-    float error2 = distX * distX + distY * distY;
+    const float error2 = distX * distX + distY * distY;
 
     if (error2 < mvMaxError[i]) {
       mvbInliersi[i] = true;
@@ -311,7 +311,7 @@ bool MLPnPsolver::Refine() {
   std::vector<int> indexes;
 
   for (std::size_t i = 0; i < vIndices.size(); i++) {
-    int idx = vIndices[i];
+    const int idx = vIndices[i];
 
     bearingVecs.push_back(mvBearingVecs[idx]);
     p3DS.push_back(mvP3Dw[idx]);
@@ -319,7 +319,7 @@ bool MLPnPsolver::Refine() {
   }
 
   // By the moment, we are using MLPnP without covariance info
-  cov3_mats_t covs(1);
+  const cov3_mats_t covs(1);
 
   // Result
   transformation_t result;
@@ -343,8 +343,8 @@ bool MLPnPsolver::Refine() {
     mRefinedTcw.block<3, 3>(0, 0) = Converter::toMatrix3f(Rcw);
     mRefinedTcw.block<3, 1>(0, 3) = Converter::toVector3f(tcw);
 
-    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
-    Eigen::Vector3d                              eigtcw(mti);
+    const Eigen::Matrix<double, 3, 3, Eigen::RowMajor> eigRcw(mRi[0]);
+    const Eigen::Vector3d                              eigtcw(mti);
 
     return true;
   }
@@ -359,7 +359,7 @@ void MLPnPsolver::computePose(
   const std::vector<int>& indices,
   transformation_t&       result
 ) {
-  std::size_t numberCorrespondences = indices.size();
+  const std::size_t numberCorrespondences = indices.size();
   assert(numberCorrespondences > 5);
 
   bool planar = false;
@@ -367,12 +367,12 @@ void MLPnPsolver::computePose(
   std::vector<Eigen::MatrixXd> nullspaces(numberCorrespondences);
   Eigen::MatrixXd              points3(3, numberCorrespondences);
   points_t                     points3v(numberCorrespondences);
-  points4_t                    points4v(numberCorrespondences);
+  const points4_t              points4v(numberCorrespondences);
   for (std::size_t i = 0; i < numberCorrespondences; i++) {
     bearingVector_t f_current = f[indices[i]];
     points3.col(i)            = p[indices[i]];
     // nullspace of right vector
-    Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::HouseholderQRPreconditioner> svd_f(
+    const Eigen::JacobiSVD<Eigen::MatrixXd, Eigen::HouseholderQRPreconditioner> svd_f(
       f_current.transpose(),
       Eigen::ComputeFullV
     );
@@ -385,7 +385,7 @@ void MLPnPsolver::computePose(
   //////////////////////////////////////
 
   Eigen::Matrix3d                              planarTest = points3 * points3.transpose();
-  Eigen::FullPivHouseholderQR<Eigen::Matrix3d> rankTest(planarTest);
+  const Eigen::FullPivHouseholderQR<Eigen::Matrix3d> rankTest(planarTest);
   Eigen::Matrix3d                              eigenRot;
   eigenRot.setIdentity();
 
@@ -397,7 +397,7 @@ void MLPnPsolver::computePose(
     // self adjoint is faster and more accurate than general eigen solvers
     // also has closed form solution for 3x3 self-adjoint matrices
     // in addition this solver sorts the eigenvalues in increasing order
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(planarTest);
+    const Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(planarTest);
     eigenRot = eigen_solver.eigenvectors().real();
     eigenRot.transposeInPlace();
     for (std::size_t i = 0; i < numberCorrespondences; i++) {
@@ -528,7 +528,7 @@ void MLPnPsolver::computePose(
     AtPA = A.transpose() * A;
   }
 
-  Eigen::JacobiSVD<Eigen::MatrixXd> svd_A(AtPA, Eigen::ComputeFullV);
+  const Eigen::JacobiSVD<Eigen::MatrixXd> svd_A(AtPA, Eigen::ComputeFullV);
   Eigen::MatrixXd                   result1 = svd_A.matrixV().col(colsA - 1);
 
   ////////////////////////////////
@@ -547,9 +547,9 @@ void MLPnPsolver::computePose(
     tmp.col(0) = tmp.col(1).cross(tmp.col(2));
     tmp.transposeInPlace();
 
-    double scale = 1.0 / std::sqrt(std::abs(tmp.col(1).norm() * tmp.col(2).norm()));
+    const double scale = 1.0 / std::sqrt(std::abs(tmp.col(1).norm() * tmp.col(2).norm()));
     // find best rotation matrix in frobenius sense
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(tmp, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    const Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(tmp, Eigen::ComputeFullU | Eigen::ComputeFullV);
     rotation_t Rout1 = svd_R_frob.matrixU() * svd_R_frob.matrixV().transpose();
     // test if we found a good rotation matrix
     if (Rout1.determinant() < 0) {
@@ -558,14 +558,15 @@ void MLPnPsolver::computePose(
     // rotate this matrix back using the eigen frame
     Rout1 = eigenRot.transpose() * Rout1;
 
-    translation_t t = scale * translation_t(result1(6, 0), result1(7, 0), result1(8, 0));
+    const translation_t t = scale * translation_t(result1(6, 0), result1(7, 0), result1(8, 0));
     Rout1.transposeInPlace();
     Rout1 *= -1;
     if (Rout1.determinant() < 0.0) {
       Rout1.col(2) *= -1;
     }
     // now we have to find the best out of 4 combinations
-    rotation_t R1, R2;
+    rotation_t R1;
+    rotation_t R2;
     R1.col(0) = Rout1.col(0);
     R1.col(1) = Rout1.col(1);
     R1.col(2) = Rout1.col(2);
@@ -594,9 +595,9 @@ void MLPnPsolver::computePose(
       }
       normVal[i] = norms;
     }
-    std::vector<double>::iterator findMinRepro
+    const auto findMinRepro
       = std::min_element(std::begin(normVal), std::end(normVal));
-    int idx = std::distance(std::begin(normVal), findMinRepro);
+    const int idx = std::distance(std::begin(normVal), findMinRepro);
     Rout    = Ts[idx].block<3, 3>(0, 0);
     tout    = Ts[idx].block<3, 1>(0, 3);
   } else { // non-planar
@@ -604,12 +605,12 @@ void MLPnPsolver::computePose(
     tmp << result1(0, 0), result1(3, 0), result1(6, 0), result1(1, 0), result1(4, 0), result1(7, 0),
       result1(2, 0), result1(5, 0), result1(8, 0);
     // get the scale
-    double scale
+    const double scale
       = 1.0
       / std::pow(std::abs(tmp.col(0).norm() * tmp.col(1).norm() * tmp.col(2).norm()), 1.0 / 3.0);
     // double scale = 1.0 / std::sqrt(std::abs(tmp.col(0).norm() * tmp.col(1).norm()));
     //  find best rotation matrix in frobenius sense
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(tmp, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    const Eigen::JacobiSVD<Eigen::MatrixXd> svd_R_frob(tmp, Eigen::ComputeFullU | Eigen::ComputeFullV);
     Rout = svd_R_frob.matrixU() * svd_R_frob.matrixV().transpose();
     // test if we found a good rotation matrix
     if (Rout.determinant() < 0) {
@@ -672,7 +673,7 @@ Eigen::Matrix3d MLPnPsolver::rodrigues2rot(const Eigen::Vector3d& omega) {
   Eigen::Matrix3d skewW;
   skewW << 0.0, -omega(2), omega(1), omega(2), 0.0, -omega(0), -omega(1), omega(0), 0.0;
 
-  double omega_norm = omega.norm();
+  const double omega_norm = omega.norm();
 
   if (omega_norm > std::numeric_limits<double>::epsilon()) {
     R = R + sin(omega_norm) / omega_norm * skewW
@@ -686,13 +687,13 @@ Eigen::Vector3d MLPnPsolver::rot2rodrigues(const Eigen::Matrix3d& R) {
   rodrigues_t omega;
   omega << 0.0, 0.0, 0.0;
 
-  double trace = R.trace() - 1.0;
-  double wnorm = acos(trace / 2.0);
+  const double trace = R.trace() - 1.0;
+  const double wnorm = acos(trace / 2.0);
   if (wnorm > std::numeric_limits<double>::epsilon()) {
-    omega[0]  = (R(2, 1) - R(1, 2));
-    omega[1]  = (R(0, 2) - R(2, 0));
-    omega[2]  = (R(1, 0) - R(0, 1));
-    double sc = wnorm / (2.0 * sin(wnorm));
+    omega[0]        = (R(2, 1) - R(1, 2));
+    omega[1]        = (R(0, 2) - R(2, 0));
+    omega[2]        = (R(1, 0) - R(0, 1));
+    const double sc = wnorm / (2.0 * sin(wnorm));
     omega     *= sc;
   }
   return omega;
@@ -702,7 +703,7 @@ void MLPnPsolver::mlpnp_gn(
   Eigen::VectorXd&                    x,
   const points_t&                     pts,
   const std::vector<Eigen::MatrixXd>& nullspaces,
-  const Eigen::SparseMatrix<double>   Kll,
+  const Eigen::SparseMatrix<double>&  Kll,
   bool                                use_cov
 ) {
   const int numObservations = pts.size();
@@ -715,7 +716,7 @@ void MLPnPsolver::mlpnp_gn(
   // =============
 
   Eigen::VectorXd r(2 * numObservations);
-  Eigen::VectorXd rd(2 * numObservations);
+  const Eigen::VectorXd rd(2 * numObservations);
   Eigen::MatrixXd Jac(2 * numObservations, numUnknowns);
   Eigen::VectorXd g(numUnknowns, 1);
   Eigen::VectorXd dx(numUnknowns, 1); // result vector
@@ -728,7 +729,7 @@ void MLPnPsolver::mlpnp_gn(
   int       it_cnt = 0;
   bool      stop   = false;
   const int maxIt  = 5;
-  double    epsP   = 1e-5;
+  const double epsP = 1e-5;
 
   Eigen::MatrixXd JacTSKll;
   Eigen::MatrixXd A;
@@ -748,7 +749,7 @@ void MLPnPsolver::mlpnp_gn(
     g = JacTSKll * r;
 
     // solve
-    Eigen::LDLT<Eigen::MatrixXd> chol(A);
+    const Eigen::LDLT<Eigen::MatrixXd> chol(A);
     dx = chol.solve(g);
     // this is to prevent the solution from falling into a wrong minimum
     // if the linear estimate is spurious
@@ -778,10 +779,10 @@ void MLPnPsolver::mlpnp_residuals_and_jacs(
   Eigen::MatrixXd&                    fjac,
   bool                                getJacs
 ) {
-  rodrigues_t   w(x[0], x[1], x[2]);
-  translation_t T(x[3], x[4], x[5]);
+  const rodrigues_t   w(x[0], x[1], x[2]);
+  const translation_t T(x[3], x[4], x[5]);
 
-  rotation_t R  = rodrigues2rot(w);
+  const rotation_t R = rodrigues2rot(w);
   int        ii = 0;
 
   Eigen::MatrixXd jacs(2, 6);
@@ -825,242 +826,242 @@ void MLPnPsolver::mlpnpJacs(
   const translation_t&   t,
   Eigen::MatrixXd&       jacs
 ) {
-  double r1 = nullspace_r[0];
-  double r2 = nullspace_r[1];
-  double r3 = nullspace_r[2];
+  const double r1 = nullspace_r[0];
+  const double r2 = nullspace_r[1];
+  const double r3 = nullspace_r[2];
 
-  double s1 = nullspace_s[0];
-  double s2 = nullspace_s[1];
-  double s3 = nullspace_s[2];
+  const double s1 = nullspace_s[0];
+  const double s2 = nullspace_s[1];
+  const double s3 = nullspace_s[2];
 
-  double X1 = pt[0];
-  double Y1 = pt[1];
-  double Z1 = pt[2];
+  const double X1 = pt[0];
+  const double Y1 = pt[1];
+  const double Z1 = pt[2];
 
-  double w1 = w[0];
-  double w2 = w[1];
-  double w3 = w[2];
+  const double w1 = w[0];
+  const double w2 = w[1];
+  const double w3 = w[2];
 
-  double t1 = t[0];
-  double t2 = t[1];
-  double t3 = t[2];
+  const double t1 = t[0];
+  const double t2 = t[1];
+  const double t3 = t[2];
 
-  double t5   = w1 * w1;
-  double t6   = w2 * w2;
-  double t7   = w3 * w3;
-  double t8   = t5 + t6 + t7;
-  double t9   = sqrt(t8);
-  double t10  = sin(t9);
-  double t11  = 1.0 / sqrt(t8);
-  double t12  = cos(t9);
-  double t13  = t12 - 1.0;
-  double t14  = 1.0 / t8;
-  double t16  = t10 * t11 * w3;
-  double t17  = t13 * t14 * w1 * w2;
-  double t19  = t10 * t11 * w2;
-  double t20  = t13 * t14 * w1 * w3;
-  double t24  = t6 + t7;
-  double t27  = t16 + t17;
-  double t28  = Y1 * t27;
-  double t29  = t19 - t20;
-  double t30  = Z1 * t29;
-  double t31  = t13 * t14 * t24;
-  double t32  = t31 + 1.0;
-  double t33  = X1 * t32;
-  double t15  = t1 - t28 + t30 + t33;
-  double t21  = t10 * t11 * w1;
-  double t22  = t13 * t14 * w2 * w3;
-  double t45  = t5 + t7;
-  double t53  = t16 - t17;
-  double t54  = X1 * t53;
-  double t55  = t21 + t22;
-  double t56  = Z1 * t55;
-  double t57  = t13 * t14 * t45;
-  double t58  = t57 + 1.0;
-  double t59  = Y1 * t58;
-  double t18  = t2 + t54 - t56 + t59;
-  double t34  = t5 + t6;
-  double t38  = t19 + t20;
-  double t39  = X1 * t38;
-  double t40  = t21 - t22;
-  double t41  = Y1 * t40;
-  double t42  = t13 * t14 * t34;
-  double t43  = t42 + 1.0;
-  double t44  = Z1 * t43;
-  double t23  = t3 - t39 + t41 + t44;
-  double t25  = 1.0 / std::pow(t8, 3.0 / 2.0);
-  double t26  = 1.0 / (t8 * t8);
-  double t35  = t12 * t14 * w1 * w2;
-  double t36  = t5 * t10 * t25 * w3;
-  double t37  = t5 * t13 * t26 * w3 * 2.0;
-  double t46  = t10 * t25 * w1 * w3;
-  double t47  = t5 * t10 * t25 * w2;
-  double t48  = t5 * t13 * t26 * w2 * 2.0;
-  double t49  = t10 * t11;
-  double t50  = t5 * t12 * t14;
-  double t51  = t13 * t26 * w1 * w2 * w3 * 2.0;
-  double t52  = t10 * t25 * w1 * w2 * w3;
-  double t60  = t15 * t15;
-  double t61  = t18 * t18;
-  double t62  = t23 * t23;
-  double t63  = t60 + t61 + t62;
-  double t64  = t5 * t10 * t25;
-  double t65  = 1.0 / sqrt(t63);
-  double t66  = Y1 * r2 * t6;
-  double t67  = Z1 * r3 * t7;
-  double t68  = r1 * t1 * t5;
-  double t69  = r1 * t1 * t6;
-  double t70  = r1 * t1 * t7;
-  double t71  = r2 * t2 * t5;
-  double t72  = r2 * t2 * t6;
-  double t73  = r2 * t2 * t7;
-  double t74  = r3 * t3 * t5;
-  double t75  = r3 * t3 * t6;
-  double t76  = r3 * t3 * t7;
-  double t77  = X1 * r1 * t5;
-  double t78  = X1 * r2 * w1 * w2;
-  double t79  = X1 * r3 * w1 * w3;
-  double t80  = Y1 * r1 * w1 * w2;
-  double t81  = Y1 * r3 * w2 * w3;
-  double t82  = Z1 * r1 * w1 * w3;
-  double t83  = Z1 * r2 * w2 * w3;
-  double t84  = X1 * r1 * t6 * t12;
-  double t85  = X1 * r1 * t7 * t12;
-  double t86  = Y1 * r2 * t5 * t12;
-  double t87  = Y1 * r2 * t7 * t12;
-  double t88  = Z1 * r3 * t5 * t12;
-  double t89  = Z1 * r3 * t6 * t12;
-  double t90  = X1 * r2 * t9 * t10 * w3;
-  double t91  = Y1 * r3 * t9 * t10 * w1;
-  double t92  = Z1 * r1 * t9 * t10 * w2;
-  double t102 = X1 * r3 * t9 * t10 * w2;
-  double t103 = Y1 * r1 * t9 * t10 * w3;
-  double t104 = Z1 * r2 * t9 * t10 * w1;
-  double t105 = X1 * r2 * t12 * w1 * w2;
-  double t106 = X1 * r3 * t12 * w1 * w3;
-  double t107 = Y1 * r1 * t12 * w1 * w2;
-  double t108 = Y1 * r3 * t12 * w2 * w3;
-  double t109 = Z1 * r1 * t12 * w1 * w3;
-  double t110 = Z1 * r2 * t12 * w2 * w3;
-  double t93  = t66 + t67 + t68 + t69 + t70 + t71 + t72 + t73 + t74 + t75 + t76 + t77 + t78 + t79
+  const double t5   = w1 * w1;
+  const double t6   = w2 * w2;
+  const double t7   = w3 * w3;
+  const double t8   = t5 + t6 + t7;
+  const double t9   = sqrt(t8);
+  const double t10  = sin(t9);
+  const double t11  = 1.0 / sqrt(t8);
+  const double t12  = cos(t9);
+  const double t13  = t12 - 1.0;
+  const double t14  = 1.0 / t8;
+  const double t16  = t10 * t11 * w3;
+  const double t17  = t13 * t14 * w1 * w2;
+  const double t19  = t10 * t11 * w2;
+  const double t20  = t13 * t14 * w1 * w3;
+  const double t24  = t6 + t7;
+  const double t27  = t16 + t17;
+  const double t28  = Y1 * t27;
+  const double t29  = t19 - t20;
+  const double t30  = Z1 * t29;
+  const double t31  = t13 * t14 * t24;
+  const double t32  = t31 + 1.0;
+  const double t33  = X1 * t32;
+  const double t15  = t1 - t28 + t30 + t33;
+  const double t21  = t10 * t11 * w1;
+  const double t22  = t13 * t14 * w2 * w3;
+  const double t45  = t5 + t7;
+  const double t53  = t16 - t17;
+  const double t54  = X1 * t53;
+  const double t55  = t21 + t22;
+  const double t56  = Z1 * t55;
+  const double t57  = t13 * t14 * t45;
+  const double t58  = t57 + 1.0;
+  const double t59  = Y1 * t58;
+  const double t18  = t2 + t54 - t56 + t59;
+  const double t34  = t5 + t6;
+  const double t38  = t19 + t20;
+  const double t39  = X1 * t38;
+  const double t40  = t21 - t22;
+  const double t41  = Y1 * t40;
+  const double t42  = t13 * t14 * t34;
+  const double t43  = t42 + 1.0;
+  const double t44  = Z1 * t43;
+  const double t23  = t3 - t39 + t41 + t44;
+  const double t25  = 1.0 / std::pow(t8, 3.0 / 2.0);
+  const double t26  = 1.0 / (t8 * t8);
+  const double t35  = t12 * t14 * w1 * w2;
+  const double t36  = t5 * t10 * t25 * w3;
+  const double t37  = t5 * t13 * t26 * w3 * 2.0;
+  const double t46  = t10 * t25 * w1 * w3;
+  const double t47  = t5 * t10 * t25 * w2;
+  const double t48  = t5 * t13 * t26 * w2 * 2.0;
+  const double t49  = t10 * t11;
+  const double t50  = t5 * t12 * t14;
+  const double t51  = t13 * t26 * w1 * w2 * w3 * 2.0;
+  const double t52  = t10 * t25 * w1 * w2 * w3;
+  const double t60  = t15 * t15;
+  const double t61  = t18 * t18;
+  const double t62  = t23 * t23;
+  const double t63  = t60 + t61 + t62;
+  const double t64  = t5 * t10 * t25;
+  const double t65  = 1.0 / sqrt(t63);
+  const double t66  = Y1 * r2 * t6;
+  const double t67  = Z1 * r3 * t7;
+  const double t68  = r1 * t1 * t5;
+  const double t69  = r1 * t1 * t6;
+  const double t70  = r1 * t1 * t7;
+  const double t71  = r2 * t2 * t5;
+  const double t72  = r2 * t2 * t6;
+  const double t73  = r2 * t2 * t7;
+  const double t74  = r3 * t3 * t5;
+  const double t75  = r3 * t3 * t6;
+  const double t76  = r3 * t3 * t7;
+  const double t77  = X1 * r1 * t5;
+  const double t78  = X1 * r2 * w1 * w2;
+  const double t79  = X1 * r3 * w1 * w3;
+  const double t80  = Y1 * r1 * w1 * w2;
+  const double t81  = Y1 * r3 * w2 * w3;
+  const double t82  = Z1 * r1 * w1 * w3;
+  const double t83  = Z1 * r2 * w2 * w3;
+  const double t84  = X1 * r1 * t6 * t12;
+  const double t85  = X1 * r1 * t7 * t12;
+  const double t86  = Y1 * r2 * t5 * t12;
+  const double t87  = Y1 * r2 * t7 * t12;
+  const double t88  = Z1 * r3 * t5 * t12;
+  const double t89  = Z1 * r3 * t6 * t12;
+  const double t90  = X1 * r2 * t9 * t10 * w3;
+  const double t91  = Y1 * r3 * t9 * t10 * w1;
+  const double t92  = Z1 * r1 * t9 * t10 * w2;
+  const double t102 = X1 * r3 * t9 * t10 * w2;
+  const double t103 = Y1 * r1 * t9 * t10 * w3;
+  const double t104 = Z1 * r2 * t9 * t10 * w1;
+  const double t105 = X1 * r2 * t12 * w1 * w2;
+  const double t106 = X1 * r3 * t12 * w1 * w3;
+  const double t107 = Y1 * r1 * t12 * w1 * w2;
+  const double t108 = Y1 * r3 * t12 * w2 * w3;
+  const double t109 = Z1 * r1 * t12 * w1 * w3;
+  const double t110 = Z1 * r2 * t12 * w2 * w3;
+  const double t93  = t66 + t67 + t68 + t69 + t70 + t71 + t72 + t73 + t74 + t75 + t76 + t77 + t78 + t79
              + t80 + t81 + t82 + t83 + t84 + t85 + t86 + t87 + t88 + t89 + t90 + t91 + t92 - t102
              - t103 - t104 - t105 - t106 - t107 - t108 - t109 - t110;
-  double t94  = t10 * t25 * w1 * w2;
-  double t95  = t6 * t10 * t25 * w3;
-  double t96  = t6 * t13 * t26 * w3 * 2.0;
-  double t97  = t12 * t14 * w2 * w3;
-  double t98  = t6 * t10 * t25 * w1;
-  double t99  = t6 * t13 * t26 * w1 * 2.0;
-  double t100 = t6 * t10 * t25;
-  double t101 = 1.0 / std::pow(t63, 3.0 / 2.0);
-  double t111 = t6 * t12 * t14;
-  double t112 = t10 * t25 * w2 * w3;
-  double t113 = t12 * t14 * w1 * w3;
-  double t114 = t7 * t10 * t25 * w2;
-  double t115 = t7 * t13 * t26 * w2 * 2.0;
-  double t116 = t7 * t10 * t25 * w1;
-  double t117 = t7 * t13 * t26 * w1 * 2.0;
-  double t118 = t7 * t12 * t14;
-  double t119 = t13 * t24 * t26 * w1 * 2.0;
-  double t120 = t10 * t24 * t25 * w1;
-  double t121 = t119 + t120;
-  double t122 = t13 * t26 * t34 * w1 * 2.0;
-  double t123 = t10 * t25 * t34 * w1;
-  double t131 = t13 * t14 * w1 * 2.0;
-  double t124 = t122 + t123 - t131;
-  double t139 = t13 * t14 * w3;
-  double t125 = -t35 + t36 + t37 + t94 - t139;
-  double t126 = X1 * t125;
-  double t127 = t49 + t50 + t51 + t52 - t64;
-  double t128 = Y1 * t127;
-  double t129 = t126 + t128 - Z1 * t124;
-  double t130 = t23 * t129 * 2.0;
-  double t132 = t13 * t26 * t45 * w1 * 2.0;
-  double t133 = t10 * t25 * t45 * w1;
-  double t138 = t13 * t14 * w2;
-  double t134 = -t46 + t47 + t48 + t113 - t138;
-  double t135 = X1 * t134;
-  double t136 = -t49 - t50 + t51 + t52 + t64;
-  double t137 = Z1 * t136;
-  double t140 = X1 * s1 * t5;
-  double t141 = Y1 * s2 * t6;
-  double t142 = Z1 * s3 * t7;
-  double t143 = s1 * t1 * t5;
-  double t144 = s1 * t1 * t6;
-  double t145 = s1 * t1 * t7;
-  double t146 = s2 * t2 * t5;
-  double t147 = s2 * t2 * t6;
-  double t148 = s2 * t2 * t7;
-  double t149 = s3 * t3 * t5;
-  double t150 = s3 * t3 * t6;
-  double t151 = s3 * t3 * t7;
-  double t152 = X1 * s2 * w1 * w2;
-  double t153 = X1 * s3 * w1 * w3;
-  double t154 = Y1 * s1 * w1 * w2;
-  double t155 = Y1 * s3 * w2 * w3;
-  double t156 = Z1 * s1 * w1 * w3;
-  double t157 = Z1 * s2 * w2 * w3;
-  double t158 = X1 * s1 * t6 * t12;
-  double t159 = X1 * s1 * t7 * t12;
-  double t160 = Y1 * s2 * t5 * t12;
-  double t161 = Y1 * s2 * t7 * t12;
-  double t162 = Z1 * s3 * t5 * t12;
-  double t163 = Z1 * s3 * t6 * t12;
-  double t164 = X1 * s2 * t9 * t10 * w3;
-  double t165 = Y1 * s3 * t9 * t10 * w1;
-  double t166 = Z1 * s1 * t9 * t10 * w2;
-  double t183 = X1 * s3 * t9 * t10 * w2;
-  double t184 = Y1 * s1 * t9 * t10 * w3;
-  double t185 = Z1 * s2 * t9 * t10 * w1;
-  double t186 = X1 * s2 * t12 * w1 * w2;
-  double t187 = X1 * s3 * t12 * w1 * w3;
-  double t188 = Y1 * s1 * t12 * w1 * w2;
-  double t189 = Y1 * s3 * t12 * w2 * w3;
-  double t190 = Z1 * s1 * t12 * w1 * w3;
-  double t191 = Z1 * s2 * t12 * w2 * w3;
-  double t167 = t140 + t141 + t142 + t143 + t144 + t145 + t146 + t147 + t148 + t149 + t150 + t151
+  const double t94  = t10 * t25 * w1 * w2;
+  const double t95  = t6 * t10 * t25 * w3;
+  const double t96  = t6 * t13 * t26 * w3 * 2.0;
+  const double t97  = t12 * t14 * w2 * w3;
+  const double t98  = t6 * t10 * t25 * w1;
+  const double t99  = t6 * t13 * t26 * w1 * 2.0;
+  const double t100 = t6 * t10 * t25;
+  const double t101 = 1.0 / std::pow(t63, 3.0 / 2.0);
+  const double t111 = t6 * t12 * t14;
+  const double t112 = t10 * t25 * w2 * w3;
+  const double t113 = t12 * t14 * w1 * w3;
+  const double t114 = t7 * t10 * t25 * w2;
+  const double t115 = t7 * t13 * t26 * w2 * 2.0;
+  const double t116 = t7 * t10 * t25 * w1;
+  const double t117 = t7 * t13 * t26 * w1 * 2.0;
+  const double t118 = t7 * t12 * t14;
+  const double t119 = t13 * t24 * t26 * w1 * 2.0;
+  const double t120 = t10 * t24 * t25 * w1;
+  const double t121 = t119 + t120;
+  const double t122 = t13 * t26 * t34 * w1 * 2.0;
+  const double t123 = t10 * t25 * t34 * w1;
+  const double t131 = t13 * t14 * w1 * 2.0;
+  const double t124 = t122 + t123 - t131;
+  const double t139 = t13 * t14 * w3;
+  const double t125 = -t35 + t36 + t37 + t94 - t139;
+  const double t126 = X1 * t125;
+  const double t127 = t49 + t50 + t51 + t52 - t64;
+  const double t128 = Y1 * t127;
+  const double t129 = t126 + t128 - Z1 * t124;
+  const double t130 = t23 * t129 * 2.0;
+  const double t132 = t13 * t26 * t45 * w1 * 2.0;
+  const double t133 = t10 * t25 * t45 * w1;
+  const double t138 = t13 * t14 * w2;
+  const double t134 = -t46 + t47 + t48 + t113 - t138;
+  const double t135 = X1 * t134;
+  const double t136 = -t49 - t50 + t51 + t52 + t64;
+  const double t137 = Z1 * t136;
+  const double t140 = X1 * s1 * t5;
+  const double t141 = Y1 * s2 * t6;
+  const double t142 = Z1 * s3 * t7;
+  const double t143 = s1 * t1 * t5;
+  const double t144 = s1 * t1 * t6;
+  const double t145 = s1 * t1 * t7;
+  const double t146 = s2 * t2 * t5;
+  const double t147 = s2 * t2 * t6;
+  const double t148 = s2 * t2 * t7;
+  const double t149 = s3 * t3 * t5;
+  const double t150 = s3 * t3 * t6;
+  const double t151 = s3 * t3 * t7;
+  const double t152 = X1 * s2 * w1 * w2;
+  const double t153 = X1 * s3 * w1 * w3;
+  const double t154 = Y1 * s1 * w1 * w2;
+  const double t155 = Y1 * s3 * w2 * w3;
+  const double t156 = Z1 * s1 * w1 * w3;
+  const double t157 = Z1 * s2 * w2 * w3;
+  const double t158 = X1 * s1 * t6 * t12;
+  const double t159 = X1 * s1 * t7 * t12;
+  const double t160 = Y1 * s2 * t5 * t12;
+  const double t161 = Y1 * s2 * t7 * t12;
+  const double t162 = Z1 * s3 * t5 * t12;
+  const double t163 = Z1 * s3 * t6 * t12;
+  const double t164 = X1 * s2 * t9 * t10 * w3;
+  const double t165 = Y1 * s3 * t9 * t10 * w1;
+  const double t166 = Z1 * s1 * t9 * t10 * w2;
+  const double t183 = X1 * s3 * t9 * t10 * w2;
+  const double t184 = Y1 * s1 * t9 * t10 * w3;
+  const double t185 = Z1 * s2 * t9 * t10 * w1;
+  const double t186 = X1 * s2 * t12 * w1 * w2;
+  const double t187 = X1 * s3 * t12 * w1 * w3;
+  const double t188 = Y1 * s1 * t12 * w1 * w2;
+  const double t189 = Y1 * s3 * t12 * w2 * w3;
+  const double t190 = Z1 * s1 * t12 * w1 * w3;
+  const double t191 = Z1 * s2 * t12 * w2 * w3;
+  const double t167 = t140 + t141 + t142 + t143 + t144 + t145 + t146 + t147 + t148 + t149 + t150 + t151
               + t152 + t153 + t154 + t155 + t156 + t157 + t158 + t159 + t160 + t161 + t162 + t163
               + t164 + t165 + t166 - t183 - t184 - t185 - t186 - t187 - t188 - t189 - t190 - t191;
-  double t168 = t13 * t26 * t45 * w2 * 2.0;
-  double t169 = t10 * t25 * t45 * w2;
-  double t170 = t168 + t169;
-  double t171 = t13 * t26 * t34 * w2 * 2.0;
-  double t172 = t10 * t25 * t34 * w2;
-  double t176 = t13 * t14 * w2 * 2.0;
-  double t173 = t171 + t172 - t176;
-  double t174 = -t49 + t51 + t52 + t100 - t111;
-  double t175 = X1 * t174;
-  double t177 = t13 * t24 * t26 * w2 * 2.0;
-  double t178 = t10 * t24 * t25 * w2;
-  double t192 = t13 * t14 * w1;
-  double t179 = -t97 + t98 + t99 + t112 - t192;
-  double t180 = Y1 * t179;
-  double t181 = t49 + t51 + t52 - t100 + t111;
-  double t182 = Z1 * t181;
-  double t193 = t13 * t26 * t34 * w3 * 2.0;
-  double t194 = t10 * t25 * t34 * w3;
-  double t195 = t193 + t194;
-  double t196 = t13 * t26 * t45 * w3 * 2.0;
-  double t197 = t10 * t25 * t45 * w3;
-  double t200 = t13 * t14 * w3 * 2.0;
-  double t198 = t196 + t197 - t200;
-  double t199 = t7 * t10 * t25;
-  double t201 = t13 * t24 * t26 * w3 * 2.0;
-  double t202 = t10 * t24 * t25 * w3;
-  double t203 = -t49 + t51 + t52 - t118 + t199;
-  double t204 = Y1 * t203;
-  double t205 = t1 * 2.0;
-  double t206 = Z1 * t29 * 2.0;
-  double t207 = X1 * t32 * 2.0;
-  double t208 = t205 + t206 + t207 - Y1 * t27 * 2.0;
-  double t209 = t2 * 2.0;
-  double t210 = X1 * t53 * 2.0;
-  double t211 = Y1 * t58 * 2.0;
-  double t212 = t209 + t210 + t211 - Z1 * t55 * 2.0;
-  double t213 = t3 * 2.0;
-  double t214 = Y1 * t40 * 2.0;
-  double t215 = Z1 * t43 * 2.0;
-  double t216 = t213 + t214 + t215 - X1 * t38 * 2.0;
+  const double t168 = t13 * t26 * t45 * w2 * 2.0;
+  const double t169 = t10 * t25 * t45 * w2;
+  const double t170 = t168 + t169;
+  const double t171 = t13 * t26 * t34 * w2 * 2.0;
+  const double t172 = t10 * t25 * t34 * w2;
+  const double t176 = t13 * t14 * w2 * 2.0;
+  const double t173 = t171 + t172 - t176;
+  const double t174 = -t49 + t51 + t52 + t100 - t111;
+  const double t175 = X1 * t174;
+  const double t177 = t13 * t24 * t26 * w2 * 2.0;
+  const double t178 = t10 * t24 * t25 * w2;
+  const double t192 = t13 * t14 * w1;
+  const double t179 = -t97 + t98 + t99 + t112 - t192;
+  const double t180 = Y1 * t179;
+  const double t181 = t49 + t51 + t52 - t100 + t111;
+  const double t182 = Z1 * t181;
+  const double t193 = t13 * t26 * t34 * w3 * 2.0;
+  const double t194 = t10 * t25 * t34 * w3;
+  const double t195 = t193 + t194;
+  const double t196 = t13 * t26 * t45 * w3 * 2.0;
+  const double t197 = t10 * t25 * t45 * w3;
+  const double t200 = t13 * t14 * w3 * 2.0;
+  const double t198 = t196 + t197 - t200;
+  const double t199 = t7 * t10 * t25;
+  const double t201 = t13 * t24 * t26 * w3 * 2.0;
+  const double t202 = t10 * t24 * t25 * w3;
+  const double t203 = -t49 + t51 + t52 - t118 + t199;
+  const double t204 = Y1 * t203;
+  const double t205 = t1 * 2.0;
+  const double t206 = Z1 * t29 * 2.0;
+  const double t207 = X1 * t32 * 2.0;
+  const double t208 = t205 + t206 + t207 - Y1 * t27 * 2.0;
+  const double t209 = t2 * 2.0;
+  const double t210 = X1 * t53 * 2.0;
+  const double t211 = Y1 * t58 * 2.0;
+  const double t212 = t209 + t210 + t211 - Z1 * t55 * 2.0;
+  const double t213 = t3 * 2.0;
+  const double t214 = Y1 * t40 * 2.0;
+  const double t215 = Z1 * t43 * 2.0;
+  const double t216 = t213 + t214 + t215 - X1 * t38 * 2.0;
   jacs(0, 0) = t14 * t65 * (X1 * r1 * w1 * 2.0 + X1 * r2 * w2 + X1 * r3 * w3 + Y1 * r1 * w2 + Z1 * r1 * w3 + r1 * t1 * w1 * 2.0 + r2 * t2 * w1 * 2.0 + r3 * t3 * w1 * 2.0 + Y1 * r3 * t5 * t12 + Y1 * r3 * t9 * t10 - Z1 * r2 * t5 * t12 - Z1 * r2 * t9 * t10 - X1 * r2 * t12 * w2 - X1 * r3 * t12 * w3 - Y1 * r1 * t12 * w2 + Y1 * r2 * t12 * w1 * 2.0 - Z1 * r1 * t12 * w3 + Z1 * r3 * t12 * w1 * 2.0 + Y1 * r3 * t5 * t10 * t11 - Z1 * r2 * t5 * t10 * t11 + X1 * r2 * t12 * w1 * w3 - X1 * r3 * t12 * w1 * w2 - Y1 * r1 * t12 * w1 * w3 + Z1 * r1 * t12 * w1 * w2 - Y1 * r1 * t10 * t11 * w1 * w3 + Z1 * r1 * t10 * t11 * w1 * w2 - X1 * r1 * t6 * t10 * t11 * w1 - X1 * r1 * t7 * t10 * t11 * w1 + X1 * r2 * t5 * t10 * t11 * w2 + X1 * r3 * t5 * t10 * t11 * w3 + Y1 * r1 * t5 * t10 * t11 * w2 - Y1 * r2 * t5 * t10 * t11 * w1 - Y1 * r2 * t7 * t10 * t11 * w1 + Z1 * r1 * t5 * t10 * t11 * w3 - Z1 * r3 * t5 * t10 * t11 * w1 - Z1 * r3 * t6 * t10 * t11 * w1 + X1 * r2 * t10 * t11 * w1 * w3 - X1 * r3 * t10 * t11 * w1 * w2 + Y1 * r3 * t10 * t11 * w1 * w2 * w3 + Z1 * r2 * t10 * t11 * w1 * w2 * w3)
              - t26 * t65 * t93 * w1 * 2.0 - t14 * t93 * t101 * (t130 + t15 * (-X1 * t121 + Y1 * (t46 + t47 + t48 - t13 * t14 * w2 - t12 * t14 * w1 * w3) + Z1 * (t35 + t36 + t37 - t13 * t14 * w3 - t10 * t25 * w1 * w2)) * 2.0 + t18 * (t135 + t137 - Y1 * (t132 + t133 - t13 * t14 * w1 * 2.0)) * 2.0) * (1.0 / 2.0);
   jacs(0, 1) = t14 * t65 * (X1 * r2 * w1 + Y1 * r1 * w1 + Y1 * r2 * w2 * 2.0 + Y1 * r3 * w3 + Z1 * r2 * w3 + r1 * t1 * w2 * 2.0 + r2 * t2 * w2 * 2.0 + r3 * t3 * w2 * 2.0 - X1 * r3 * t6 * t12 - X1 * r3 * t9 * t10 + Z1 * r1 * t6 * t12 + Z1 * r1 * t9 * t10 + X1 * r1 * t12 * w2 * 2.0 - X1 * r2 * t12 * w1 - Y1 * r1 * t12 * w1 - Y1 * r3 * t12 * w3 - Z1 * r2 * t12 * w3 + Z1 * r3 * t12 * w2 * 2.0 - X1 * r3 * t6 * t10 * t11 + Z1 * r1 * t6 * t10 * t11 + X1 * r2 * t12 * w2 * w3 - Y1 * r1 * t12 * w2 * w3 + Y1 * r3 * t12 * w1 * w2 - Z1 * r2 * t12 * w1 * w2 - Y1 * r1 * t10 * t11 * w2 * w3 + Y1 * r3 * t10 * t11 * w1 * w2 - Z1 * r2 * t10 * t11 * w1 * w2 - X1 * r1 * t6 * t10 * t11 * w2 + X1 * r2 * t6 * t10 * t11 * w1 - X1 * r1 * t7 * t10 * t11 * w2 + Y1 * r1 * t6 * t10 * t11 * w1 - Y1 * r2 * t5 * t10 * t11 * w2 - Y1 * r2 * t7 * t10 * t11 * w2 + Y1 * r3 * t6 * t10 * t11 * w3 - Z1 * r3 * t5 * t10 * t11 * w2 + Z1 * r2 * t6 * t10 * t11 * w3 - Z1 * r3 * t6 * t10 * t11 * w2 + X1 * r2 * t10 * t11 * w2 * w3 + X1 * r3 * t10 * t11 * w1 * w2 * w3 + Z1 * r1 * t10 * t11 * w1 * w2 * w3)

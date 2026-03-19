@@ -5,18 +5,38 @@
 # adds checks AFTER fixing all warnings, then promotes them to WarningsAsErrors.
 # This keeps the build green at every step.
 #
-# See docs/source/system-status.md for the modernization roadmap.
+# See docs/source/building/code-quality.md for the full check inventory.
 #
 # Permanent suppressions (never enabled):
 #   readability-identifier-length       — SLAM math uses short names legitimately
-#   readability-identifier-naming       — deferred to optional Phase 11
+#   readability-identifier-naming       — deferred to optional Phase 8
 #   readability-magic-numbers           — too noisy for math-heavy code
 #   readability-function-cognitive-complexity — legacy functions, not fixable without rewrite
+#   readability-function-size           — same rationale as cognitive-complexity
 #   readability-else-after-return       — style preference, not a defect
+#   readability-named-parameter         — conflicts with misc-unused-parameters convention
+#   readability-suspicious-call-argument — too noisy for SLAM pose variables (Tcw/Twc/Tlr)
+#   readability-use-anyofallof          — too noisy for complex SLAM loops
 #   modernize-use-trailing-return-type  — style preference
 #   modernize-avoid-c-arrays            — used in serialization/legacy APIs
 #   bugprone-easily-swappable-parameters — too noisy for SLAM APIs
 #   bugprone-narrowing-conversions      — overlaps with compiler warnings
+#   bugprone-argument-comment           — convention not used in codebase
+#   misc-include-cleaner                — false positives with Eigen/OpenCV/g2o
+#   misc-misplaced-const               — enforces east-const; project uses west-const
+#   misc-non-private-member-variables-in-classes — 200+ violations, fundamental legacy design
+#   cppcoreguidelines-owning-memory     — 300+ violations, Phase 2 addresses this
+#   cppcoreguidelines-pro-bounds-array-to-pointer-decay — pervasive C API interop
+#   cppcoreguidelines-pro-bounds-constant-array-index   — core SLAM indexing patterns
+#   cppcoreguidelines-pro-bounds-pointer-arithmetic     — essential for math-heavy code
+#   cppcoreguidelines-pro-type-const-cast  — required by Boost.Serialization
+#   cppcoreguidelines-pro-type-static-cast-downcast — g2o guarantees type safety
+#
+# C++20/23 deferred (revisit on language upgrade):
+#   modernize-use-constraints           — requires C++20
+#   modernize-use-starts-ends-with      — requires C++20
+#   modernize-use-std-numbers           — requires C++20
+#   modernize-use-std-print             — requires C++23
 
 Checks: >
   -*,
@@ -32,6 +52,24 @@ Checks: >
   modernize-use-auto,
   modernize-loop-convert,
   modernize-pass-by-value,
+  modernize-avoid-bind,
+  modernize-deprecated-headers,
+  modernize-deprecated-ios-base-aliases,
+  modernize-macro-to-enum,
+  modernize-make-shared,
+  modernize-make-unique,
+  modernize-redundant-void-arg,
+  modernize-replace-auto-ptr,
+  modernize-replace-disallow-copy-and-assign-macro,
+  modernize-replace-random-shuffle,
+  modernize-shrink-to-fit,
+  modernize-type-traits,
+  modernize-unary-static-assert,
+  modernize-use-equals-delete,
+  modernize-use-noexcept,
+  modernize-use-nullptr,
+  modernize-use-transparent-functors,
+  modernize-use-uncaught-exceptions,
   readability-redundant-access-specifiers,
   readability-uppercase-literal-suffix,
   readability-redundant-inline-specifier,
@@ -42,13 +80,74 @@ Checks: >
   readability-make-member-function-const,
   readability-implicit-bool-conversion,
   readability-simplify-boolean-expr,
+  readability-avoid-nested-conditional-operator,
+  readability-avoid-unconditional-preprocessor-if,
+  readability-const-return-type,
+  readability-delete-null-pointer,
+  readability-duplicate-include,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-smartptr-get,
+  readability-reference-to-constructed-temporary,
+  readability-uniqueptr-delete-release,
   performance-avoid-endl,
   performance-unnecessary-value-param,
   performance-unnecessary-copy-initialization,
+  performance-faster-string-find,
+  performance-for-range-copy,
+  performance-implicit-conversion-in-loop,
+  performance-inefficient-algorithm,
+  performance-inefficient-string-concatenation,
+  performance-inefficient-vector-operation,
+  performance-move-const-arg,
+  performance-move-constructor-init,
+  performance-no-automatic-move,
+  performance-no-int-to-ptr,
+  performance-noexcept-destructor,
+  performance-noexcept-move-constructor,
+  performance-noexcept-swap,
+  performance-type-promotion-in-math-fn,
   misc-unused-parameters,
   misc-const-correctness,
+  misc-new-delete-overloads,
+  misc-redundant-expression,
+  misc-static-assert,
+  misc-throw-by-value-catch-by-reference,
+  misc-unconventional-assign-operator,
+  misc-uniqueptr-reset-release,
   cppcoreguidelines-init-variables,
+  cppcoreguidelines-avoid-goto,
+  cppcoreguidelines-missing-std-forward,
+  cppcoreguidelines-pro-type-union-access,
+  cppcoreguidelines-pro-type-vararg,
+  cppcoreguidelines-rvalue-reference-param-not-moved,
   bugprone-implicit-widening-of-multiplication-result,
+  bugprone-assert-side-effect,
+  bugprone-assignment-in-if-condition,
+  bugprone-casting-through-void,
+  bugprone-chained-comparison,
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-fold-init-type,
+  bugprone-forwarding-reference-overload,
+  bugprone-incorrect-roundings,
+  bugprone-infinite-loop,
+  bugprone-integer-division,
+  bugprone-misplaced-widening-cast,
+  bugprone-move-forwarding-reference,
+  bugprone-multi-level-implicit-pointer-conversion,
+  bugprone-parent-virtual-call,
+  bugprone-sizeof-expression,
+  bugprone-standalone-empty,
+  bugprone-string-constructor,
+  bugprone-suspicious-semicolon,
+  bugprone-swapped-arguments,
+  bugprone-unhandled-self-assignment,
+  bugprone-unused-raii,
+  bugprone-unused-return-value,
+  bugprone-use-after-move,
+  bugprone-virtual-near-miss,
 
 WarningsAsErrors: >
   modernize-use-override,
@@ -60,6 +159,27 @@ WarningsAsErrors: >
   modernize-use-nodiscard,
   modernize-return-braced-init-list,
   modernize-concat-nested-namespaces,
+  modernize-use-auto,
+  modernize-loop-convert,
+  modernize-pass-by-value,
+  modernize-avoid-bind,
+  modernize-deprecated-headers,
+  modernize-deprecated-ios-base-aliases,
+  modernize-macro-to-enum,
+  modernize-make-shared,
+  modernize-make-unique,
+  modernize-redundant-void-arg,
+  modernize-replace-auto-ptr,
+  modernize-replace-disallow-copy-and-assign-macro,
+  modernize-replace-random-shuffle,
+  modernize-shrink-to-fit,
+  modernize-type-traits,
+  modernize-unary-static-assert,
+  modernize-use-equals-delete,
+  modernize-use-noexcept,
+  modernize-use-nullptr,
+  modernize-use-transparent-functors,
+  modernize-use-uncaught-exceptions,
   readability-redundant-access-specifiers,
   readability-uppercase-literal-suffix,
   readability-redundant-inline-specifier,
@@ -67,8 +187,77 @@ WarningsAsErrors: >
   readability-container-contains,
   readability-avoid-const-params-in-decls,
   readability-isolate-declaration,
+  readability-make-member-function-const,
+  readability-implicit-bool-conversion,
+  readability-simplify-boolean-expr,
+  readability-avoid-nested-conditional-operator,
+  readability-avoid-unconditional-preprocessor-if,
+  readability-const-return-type,
+  readability-delete-null-pointer,
+  readability-duplicate-include,
+  readability-misleading-indentation,
+  readability-redundant-control-flow,
+  readability-redundant-declaration,
+  readability-redundant-smartptr-get,
+  readability-reference-to-constructed-temporary,
+  readability-uniqueptr-delete-release,
   performance-avoid-endl,
   performance-unnecessary-value-param,
+  performance-unnecessary-copy-initialization,
+  performance-faster-string-find,
+  performance-for-range-copy,
+  performance-implicit-conversion-in-loop,
+  performance-inefficient-algorithm,
+  performance-inefficient-string-concatenation,
+  performance-inefficient-vector-operation,
+  performance-move-const-arg,
+  performance-move-constructor-init,
+  performance-no-automatic-move,
+  performance-no-int-to-ptr,
+  performance-noexcept-destructor,
+  performance-noexcept-move-constructor,
+  performance-noexcept-swap,
+  performance-type-promotion-in-math-fn,
+  misc-unused-parameters,
+  misc-const-correctness,
+  misc-new-delete-overloads,
+  misc-redundant-expression,
+  misc-static-assert,
+  misc-throw-by-value-catch-by-reference,
+  misc-unconventional-assign-operator,
+  misc-uniqueptr-reset-release,
+  cppcoreguidelines-init-variables,
+  cppcoreguidelines-avoid-goto,
+  cppcoreguidelines-missing-std-forward,
+  cppcoreguidelines-pro-type-union-access,
+  cppcoreguidelines-pro-type-vararg,
+  cppcoreguidelines-rvalue-reference-param-not-moved,
+  bugprone-implicit-widening-of-multiplication-result,
+  bugprone-assert-side-effect,
+  bugprone-assignment-in-if-condition,
+  bugprone-casting-through-void,
+  bugprone-chained-comparison,
+  bugprone-copy-constructor-init,
+  bugprone-dangling-handle,
+  bugprone-fold-init-type,
+  bugprone-forwarding-reference-overload,
+  bugprone-incorrect-roundings,
+  bugprone-infinite-loop,
+  bugprone-integer-division,
+  bugprone-misplaced-widening-cast,
+  bugprone-move-forwarding-reference,
+  bugprone-multi-level-implicit-pointer-conversion,
+  bugprone-parent-virtual-call,
+  bugprone-sizeof-expression,
+  bugprone-standalone-empty,
+  bugprone-string-constructor,
+  bugprone-suspicious-semicolon,
+  bugprone-swapped-arguments,
+  bugprone-unhandled-self-assignment,
+  bugprone-unused-raii,
+  bugprone-unused-return-value,
+  bugprone-use-after-move,
+  bugprone-virtual-near-miss,
 
 HeaderFilterRegex: 'include/.*\.h$'
 

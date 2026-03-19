@@ -100,9 +100,7 @@ public:
   MapPoint();
 
   MapPoint(const Eigen::Vector3f& Pos, KeyFrame* pRefKF, Map* pMap);
-  MapPoint(
-    const double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap
-  );
+  MapPoint(double invDepth, cv::Point2f uv_init, KeyFrame* pRefKF, KeyFrame* pHostKF, Map* pMap);
   MapPoint(const Eigen::Vector3f& Pos, Map* pMap, Frame* pFrame, const int& idxF);
 
   void            SetWorldPos(const Eigen::Vector3f& Pos);
@@ -131,7 +129,7 @@ public:
   void       IncreaseVisible(int n = 1);
   void       IncreaseFound(int n = 1);
   float      GetFoundRatio();
-  inline int GetFound() {
+  [[nodiscard]] int GetFound() const {
     return mnFound;
   }
 
@@ -154,7 +152,6 @@ public:
     std::map<long unsigned int, KeyFrame*>& mpKFid, std::map<long unsigned int, MapPoint*>& mpMPid
   );
 
-public:
   long unsigned int        mnId;
   static long unsigned int nNextId;
   long int                 mnFirstKFid;

@@ -43,16 +43,14 @@ public:
   int SearchByProjection(
     Frame&                        F,
     const std::vector<MapPoint*>& vpMapPoints,
-    const float                   th          = 3,
-    const bool                    bFarPoints  = false,
-    const float                   thFarPoints = 50.0f
+    float                         th          = 3,
+    bool                          bFarPoints  = false,
+    float                         thFarPoints = 50.0F
   );
 
   // Project MapPoints tracked in last frame into the current frame and search matches.
   // Used to track from previous frame (Tracking)
-  int SearchByProjection(
-    Frame& CurrentFrame, const Frame& LastFrame, const float th, const bool bMono
-  );
+  int SearchByProjection(Frame& CurrentFrame, const Frame& LastFrame, float th, bool bMono);
 
   // Project MapPoints seen in KeyFrame into the Frame and search matches.
   // Used in relocalisation (Tracking)
@@ -60,8 +58,8 @@ public:
     Frame&                     CurrentFrame,
     KeyFrame*                  pKF,
     const std::set<MapPoint*>& sAlreadyFound,
-    const float                th,
-    const int                  ORBdist
+    float                      th,
+    int                        ORBdist
   );
 
   // Project MapPoints using a Similarity Transformation and search matches.
@@ -108,8 +106,8 @@ public:
     KeyFrame*                                          pKF1,
     KeyFrame*                                          pKF2,
     std::vector<std::pair<std::size_t, std::size_t> >& vMatchedPairs,
-    const bool                                         bOnlyStereo,
-    const bool                                         bCoarse = false
+    bool                                               bOnlyStereo,
+    bool                                               bCoarse = false
   );
 
   // Search matches between MapPoints seen in KF1 and KF2 transforming by a Sim3 [s12*R12|t12]
@@ -121,15 +119,12 @@ public:
     KeyFrame*               pKF2,
     std::vector<MapPoint*>& vpMatches12,
     const Sophus::Sim3f&    S12,
-    const float             th
+    float                   th
   );
 
   // Project MapPoints into KeyFrame and search for duplicated MapPoints.
   int Fuse(
-    KeyFrame*                     pKF,
-    const std::vector<MapPoint*>& vpMapPoints,
-    const float                   th     = 3.0,
-    const bool                    bRight = false
+    KeyFrame* pKF, const std::vector<MapPoint*>& vpMapPoints, float th = 3.0, bool bRight = false
   );
 
   // Project MapPoints into KeyFrame using a given Sim3 and search for duplicated MapPoints.
@@ -141,7 +136,6 @@ public:
     std::vector<MapPoint*>&       vpReplacePoint
   );
 
-public:
   static const int TH_LOW;
   static const int TH_HIGH;
   static const int HISTO_LENGTH;
@@ -150,7 +144,7 @@ public:
 protected:
   float RadiusByViewingCos(const float& viewCos);
 
-  void ComputeThreeMaxima(std::vector<int>* histo, const int L, int& ind1, int& ind2, int& ind3);
+  void ComputeThreeMaxima(std::vector<int>* histo, int L, int& ind1, int& ind2, int& ind3);
 
   float mfNNratio;
   bool  mbCheckOrientation;

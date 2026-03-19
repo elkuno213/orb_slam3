@@ -34,7 +34,7 @@ public:
   std::vector<cv::KeyPoint>          vKeys;
   cv::Point2i                        UL, UR, BL, BR;
   std::list<ExtractorNode>::iterator lit;
-  bool                               bNoMore;
+  bool                               bNoMore{false};
 };
 
 class ORBextractor {
@@ -59,36 +59,36 @@ public:
     std::vector<int>&          vLappingArea
   );
 
-  int inline GetLevels() {
+  [[nodiscard]] int GetLevels() const {
     return nlevels;
   }
 
-  float inline GetScaleFactor() {
+  [[nodiscard]] float GetScaleFactor() const {
     return scaleFactor;
   }
 
-  std::vector<float> inline GetScaleFactors() {
+  std::vector<float> GetScaleFactors() {
     return mvScaleFactor;
   }
 
-  std::vector<float> inline GetInverseScaleFactors() {
+  std::vector<float> GetInverseScaleFactors() {
     return mvInvScaleFactor;
   }
 
-  std::vector<float> inline GetScaleSigmaSquares() {
+  std::vector<float> GetScaleSigmaSquares() {
     return mvLevelSigma2;
   }
 
-  std::vector<float> inline GetInverseScaleSigmaSquares() {
+  std::vector<float> GetInverseScaleSigmaSquares() {
     return mvInvLevelSigma2;
   }
 
   std::vector<cv::Mat> mvImagePyramid;
 
 protected:
-  void ComputePyramid(cv::Mat image);
+  void ComputePyramid(const cv::Mat& image);
   void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint>>& allKeypoints);
-  std::vector<cv::KeyPoint> DistributeOctTree(
+  [[nodiscard]] std::vector<cv::KeyPoint> DistributeOctTree(
     const std::vector<cv::KeyPoint>& vToDistributeKeys,
     const int&                       minX,
     const int&                       maxX,
@@ -96,7 +96,7 @@ protected:
     const int&                       maxY,
     const int&                       nFeatures,
     const int&                       level
-  );
+  ) const;
   void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint>>& allKeypoints);
 
   std::vector<cv::Point> pattern;

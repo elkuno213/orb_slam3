@@ -191,7 +191,8 @@ bool ImuCamPose::isDepthPositive(const Eigen::Vector3d& Xw, int cam_idx) const {
 }
 
 void ImuCamPose::Update(const double* pu) {
-  Eigen::Vector3d ur, ut;
+  Eigen::Vector3d ur;
+  Eigen::Vector3d ut;
   ur << pu[0], pu[1], pu[2];
   ut << pu[3], pu[4], pu[5];
 
@@ -217,7 +218,8 @@ void ImuCamPose::Update(const double* pu) {
 }
 
 void ImuCamPose::UpdateW(const double* pu) {
-  Eigen::Vector3d ur, ut;
+  Eigen::Vector3d ur;
+  Eigen::Vector3d ut;
   ur << pu[0], pu[1], pu[2];
   ut << pu[3], pu[4], pu[5];
 
@@ -815,7 +817,7 @@ Eigen::Vector3d LogSO3(const Eigen::Matrix3d& R) {
   const double    tr = R(0, 0) + R(1, 1) + R(2, 2);
   Eigen::Vector3d w;
   w << (R(2, 1) - R(1, 2)) / 2, (R(0, 2) - R(2, 0)) / 2, (R(1, 0) - R(0, 1)) / 2;
-  const double costheta = (tr - 1.0) * 0.5f;
+  const double costheta = (tr - 1.0) * 0.5F;
   if (costheta > 1 || costheta < -1) {
     return w;
   }

@@ -34,14 +34,14 @@ template <>
 float Settings::readParameter<float>(
   cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required
 ) {
-  cv::FileNode node = fSettings[name];
+  const cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
       throw std::runtime_error(fmt::format("{} required parameter does not exist", name));
     } else {
       _logger->warn("{} optional parameter does not exist", name);
       found = false;
-      return 0.0f;
+      return 0.0F;
     }
   } else if (!node.isReal()) {
     throw std::runtime_error(fmt::format("{} parameter must be a real number", name));
@@ -55,7 +55,7 @@ template <>
 int Settings::readParameter<int>(
   cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required
 ) {
-  cv::FileNode node = fSettings[name];
+  const cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
       throw std::runtime_error(fmt::format("{} required parameter does not exist", name));
@@ -76,14 +76,14 @@ template <>
 std::string Settings::readParameter<std::string>(
   cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required
 ) {
-  cv::FileNode node = fSettings[name];
+  const cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
       throw std::runtime_error(fmt::format("{} required parameter does not exist", name));
     } else {
       _logger->warn("{} optional parameter does not exist", name);
       found = false;
-      return std::string();
+      return {};
     }
   } else if (!node.isString()) {
     throw std::runtime_error(fmt::format("{} parameter must be a string", name));
@@ -97,14 +97,14 @@ template <>
 cv::Mat Settings::readParameter<cv::Mat>(
   cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required
 ) {
-  cv::FileNode node = fSettings[name];
+  const cv::FileNode node = fSettings[name];
   if (node.empty()) {
     if (required) {
       throw std::runtime_error(fmt::format("{} required parameter does not exist", name));
     } else {
       _logger->warn("{} optional parameter does not exist", name);
       found = false;
-      return cv::Mat();
+      return {};
     }
   } else {
     found = true;
@@ -168,7 +168,7 @@ Settings::Settings(const std::string& configFile, const int& sensor)
 }
 
 void Settings::readCamera1(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   // Read camera model
   std::string cameraModel = readParameter<std::string>(fSettings, "Camera.type", found);
@@ -178,10 +178,10 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
     cameraType_ = PinHole;
 
     // Read intrinsic parameters
-    float fx = readParameter<float>(fSettings, "Camera1.fx", found);
-    float fy = readParameter<float>(fSettings, "Camera1.fy", found);
-    float cx = readParameter<float>(fSettings, "Camera1.cx", found);
-    float cy = readParameter<float>(fSettings, "Camera1.cy", found);
+    const float fx = readParameter<float>(fSettings, "Camera1.fx", found);
+    const float fy = readParameter<float>(fSettings, "Camera1.fy", found);
+    const float cx = readParameter<float>(fSettings, "Camera1.cx", found);
+    const float cy = readParameter<float>(fSettings, "Camera1.cy", found);
 
     vCalibration = {fx, fy, cx, cy};
 
@@ -212,10 +212,10 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
     cameraType_ = Rectified;
 
     // Read intrinsic parameters
-    float fx = readParameter<float>(fSettings, "Camera1.fx", found);
-    float fy = readParameter<float>(fSettings, "Camera1.fy", found);
-    float cx = readParameter<float>(fSettings, "Camera1.cx", found);
-    float cy = readParameter<float>(fSettings, "Camera1.cy", found);
+    const float fx = readParameter<float>(fSettings, "Camera1.fx", found);
+    const float fy = readParameter<float>(fSettings, "Camera1.fy", found);
+    const float cx = readParameter<float>(fSettings, "Camera1.cx", found);
+    const float cy = readParameter<float>(fSettings, "Camera1.cy", found);
 
     vCalibration = {fx, fy, cx, cy};
 
@@ -227,15 +227,15 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
     cameraType_ = KannalaBrandt;
 
     // Read intrinsic parameters
-    float fx = readParameter<float>(fSettings, "Camera1.fx", found);
-    float fy = readParameter<float>(fSettings, "Camera1.fy", found);
-    float cx = readParameter<float>(fSettings, "Camera1.cx", found);
-    float cy = readParameter<float>(fSettings, "Camera1.cy", found);
+    const float fx = readParameter<float>(fSettings, "Camera1.fx", found);
+    const float fy = readParameter<float>(fSettings, "Camera1.fy", found);
+    const float cx = readParameter<float>(fSettings, "Camera1.cx", found);
+    const float cy = readParameter<float>(fSettings, "Camera1.cy", found);
 
-    float k0 = readParameter<float>(fSettings, "Camera1.k1", found);
-    float k1 = readParameter<float>(fSettings, "Camera1.k2", found);
-    float k2 = readParameter<float>(fSettings, "Camera1.k3", found);
-    float k3 = readParameter<float>(fSettings, "Camera1.k4", found);
+    const float k0 = readParameter<float>(fSettings, "Camera1.k1", found);
+    const float k1 = readParameter<float>(fSettings, "Camera1.k2", found);
+    const float k2 = readParameter<float>(fSettings, "Camera1.k3", found);
+    const float k3 = readParameter<float>(fSettings, "Camera1.k4", found);
 
     vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
 
@@ -243,9 +243,9 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
     originalCalib1_ = new KannalaBrandt8(vCalibration);
 
     if (sensor_ == System::STEREO || sensor_ == System::IMU_STEREO) {
-      int              colBegin = readParameter<int>(fSettings, "Camera1.overlappingBegin", found);
-      int              colEnd   = readParameter<int>(fSettings, "Camera1.overlappingEnd", found);
-      std::vector<int> vOverlapping = {colBegin, colEnd};
+      const int              colBegin     = readParameter<int>(fSettings, "Camera1.overlappingBegin", found);
+      const int              colEnd       = readParameter<int>(fSettings, "Camera1.overlappingEnd", found);
+      const std::vector<int> vOverlapping = {colBegin, colEnd};
 
       static_cast<KannalaBrandt8*>(calibration1_)->mvLappingArea = vOverlapping;
     }
@@ -255,16 +255,16 @@ void Settings::readCamera1(cv::FileStorage& fSettings) {
 }
 
 void Settings::readCamera2(cv::FileStorage& fSettings) {
-  bool               found;
+  bool               found = false;
   std::vector<float> vCalibration;
   if (cameraType_ == PinHole) {
     bNeedToRectify_ = true;
 
     // Read intrinsic parameters
-    float fx = readParameter<float>(fSettings, "Camera2.fx", found);
-    float fy = readParameter<float>(fSettings, "Camera2.fy", found);
-    float cx = readParameter<float>(fSettings, "Camera2.cx", found);
-    float cy = readParameter<float>(fSettings, "Camera2.cy", found);
+    const float fx = readParameter<float>(fSettings, "Camera2.fx", found);
+    const float fy = readParameter<float>(fSettings, "Camera2.fy", found);
+    const float cx = readParameter<float>(fSettings, "Camera2.cx", found);
+    const float cy = readParameter<float>(fSettings, "Camera2.cy", found);
 
     vCalibration = {fx, fy, cx, cy};
 
@@ -288,24 +288,24 @@ void Settings::readCamera2(cv::FileStorage& fSettings) {
     }
   } else if (cameraType_ == KannalaBrandt) {
     // Read intrinsic parameters
-    float fx = readParameter<float>(fSettings, "Camera2.fx", found);
-    float fy = readParameter<float>(fSettings, "Camera2.fy", found);
-    float cx = readParameter<float>(fSettings, "Camera2.cx", found);
-    float cy = readParameter<float>(fSettings, "Camera2.cy", found);
+    const float fx = readParameter<float>(fSettings, "Camera2.fx", found);
+    const float fy = readParameter<float>(fSettings, "Camera2.fy", found);
+    const float cx = readParameter<float>(fSettings, "Camera2.cx", found);
+    const float cy = readParameter<float>(fSettings, "Camera2.cy", found);
 
-    float k0 = readParameter<float>(fSettings, "Camera1.k1", found);
-    float k1 = readParameter<float>(fSettings, "Camera1.k2", found);
-    float k2 = readParameter<float>(fSettings, "Camera1.k3", found);
-    float k3 = readParameter<float>(fSettings, "Camera1.k4", found);
+    const float k0 = readParameter<float>(fSettings, "Camera1.k1", found);
+    const float k1 = readParameter<float>(fSettings, "Camera1.k2", found);
+    const float k2 = readParameter<float>(fSettings, "Camera1.k3", found);
+    const float k3 = readParameter<float>(fSettings, "Camera1.k4", found);
 
     vCalibration = {fx, fy, cx, cy, k0, k1, k2, k3};
 
     calibration2_   = new KannalaBrandt8(vCalibration);
     originalCalib2_ = new KannalaBrandt8(vCalibration);
 
-    int              colBegin = readParameter<int>(fSettings, "Camera2.overlappingBegin", found);
-    int              colEnd   = readParameter<int>(fSettings, "Camera2.overlappingEnd", found);
-    std::vector<int> vOverlapping = {colBegin, colEnd};
+    const int              colBegin     = readParameter<int>(fSettings, "Camera2.overlappingBegin", found);
+    const int              colEnd       = readParameter<int>(fSettings, "Camera2.overlappingEnd", found);
+    const std::vector<int> vOverlapping = {colBegin, colEnd};
 
     static_cast<KannalaBrandt8*>(calibration2_)->mvLappingArea = vOverlapping;
   }
@@ -315,7 +315,7 @@ void Settings::readCamera2(cv::FileStorage& fSettings) {
     b_  = readParameter<float>(fSettings, "Stereo.b", found);
     bf_ = b_ * calibration1_->getParameter(0);
   } else {
-    cv::Mat cvTlr = readParameter<cv::Mat>(fSettings, "Stereo.T_c1_c2", found);
+    const cv::Mat cvTlr = readParameter<cv::Mat>(fSettings, "Stereo.T_c1_c2", found);
     Tlr_          = Converter::toSophus(cvTlr);
 
     // TODO: also search for Trl and invert if necessary
@@ -328,22 +328,22 @@ void Settings::readCamera2(cv::FileStorage& fSettings) {
 }
 
 void Settings::readImageInfo(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
   // Read original and desired image dimensions
-  int originalRows       = readParameter<int>(fSettings, "Camera.height", found);
-  int originalCols       = readParameter<int>(fSettings, "Camera.width", found);
+  const int originalRows = readParameter<int>(fSettings, "Camera.height", found);
+  const int originalCols = readParameter<int>(fSettings, "Camera.width", found);
   originalImSize_.width  = originalCols;
   originalImSize_.height = originalRows;
 
-  newImSize_   = originalImSize_;
-  int newHeigh = readParameter<int>(fSettings, "Camera.newHeight", found, false);
+  newImSize_         = originalImSize_;
+  const int newHeigh = readParameter<int>(fSettings, "Camera.newHeight", found, false);
   if (found) {
     bNeedToResize1_   = true;
     newImSize_.height = newHeigh;
 
     if (!bNeedToRectify_) {
       // Update calibration
-      float scaleRowFactor = (float)newImSize_.height / (float)originalImSize_.height;
+      const float scaleRowFactor = (float)newImSize_.height / (float)originalImSize_.height;
       calibration1_->setParameter(calibration1_->getParameter(1) * scaleRowFactor, 1);
       calibration1_->setParameter(calibration1_->getParameter(3) * scaleRowFactor, 3);
 
@@ -354,14 +354,14 @@ void Settings::readImageInfo(cv::FileStorage& fSettings) {
     }
   }
 
-  int newWidth = readParameter<int>(fSettings, "Camera.newWidth", found, false);
+  const int newWidth = readParameter<int>(fSettings, "Camera.newWidth", found, false);
   if (found) {
     bNeedToResize1_  = true;
     newImSize_.width = newWidth;
 
     if (!bNeedToRectify_) {
       // Update calibration
-      float scaleColFactor = (float)newImSize_.width / (float)originalImSize_.width;
+      const float scaleColFactor = (float)newImSize_.width / (float)originalImSize_.width;
       calibration1_->setParameter(calibration1_->getParameter(0) * scaleColFactor, 0);
       calibration1_->setParameter(calibration1_->getParameter(2) * scaleColFactor, 2);
 
@@ -385,14 +385,14 @@ void Settings::readImageInfo(cv::FileStorage& fSettings) {
 }
 
 void Settings::readIMU(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
   noiseGyro_    = readParameter<float>(fSettings, "IMU.NoiseGyro", found);
   noiseAcc_     = readParameter<float>(fSettings, "IMU.NoiseAcc", found);
   gyroWalk_     = readParameter<float>(fSettings, "IMU.GyroWalk", found);
   accWalk_      = readParameter<float>(fSettings, "IMU.AccWalk", found);
   imuFrequency_ = readParameter<float>(fSettings, "IMU.Frequency", found);
 
-  cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
+  const cv::Mat cvTbc = readParameter<cv::Mat>(fSettings, "IMU.T_b_c1", found);
   Tbc_          = Converter::toSophus(cvTbc);
 
   readParameter<int>(fSettings, "IMU.InsertKFsWhenLost", found, false);
@@ -404,7 +404,7 @@ void Settings::readIMU(cv::FileStorage& fSettings) {
 }
 
 void Settings::readRGBD(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   depthMapFactor_ = readParameter<float>(fSettings, "RGBD.DepthMapFactor", found);
   thDepth_        = readParameter<float>(fSettings, "Stereo.ThDepth", found);
@@ -413,7 +413,7 @@ void Settings::readRGBD(cv::FileStorage& fSettings) {
 }
 
 void Settings::readORB(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   nFeatures_   = readParameter<int>(fSettings, "ORBextractor.nFeatures", found);
   scaleFactor_ = readParameter<float>(fSettings, "ORBextractor.scaleFactor", found);
@@ -423,7 +423,7 @@ void Settings::readORB(cv::FileStorage& fSettings) {
 }
 
 void Settings::readViewer(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   keyFrameSize_      = readParameter<float>(fSettings, "Viewer.KeyFrameSize", found);
   keyFrameLineWidth_ = readParameter<float>(fSettings, "Viewer.KeyFrameLineWidth", found);
@@ -438,19 +438,19 @@ void Settings::readViewer(cv::FileStorage& fSettings) {
   imageViewerScale_  = readParameter<float>(fSettings, "Viewer.imageViewScale", found, false);
 
   if (!found) {
-    imageViewerScale_ = 1.0f;
+    imageViewerScale_ = 1.0F;
   }
 }
 
 void Settings::readLoadAndSave(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   sLoadFrom_ = readParameter<std::string>(fSettings, "System.LoadAtlasFromFile", found, false);
   sSaveto_   = readParameter<std::string>(fSettings, "System.SaveAtlasToFile", found, false);
 }
 
 void Settings::readOtherParameters(cv::FileStorage& fSettings) {
-  bool found;
+  bool found = false;
 
   thFarPoints_ = readParameter<float>(fSettings, "System.thFarPoints", found, false);
 }
@@ -469,8 +469,11 @@ void Settings::precomputeRectificationMaps() {
   cv::Mat t12 = cvTlr.rowRange(0, 3).col(3);
   t12.convertTo(t12, CV_64F);
 
-  cv::Mat R_r1_u1, R_r2_u2;
-  cv::Mat P1, P2, Q;
+  cv::Mat R_r1_u1;
+  cv::Mat R_r2_u2;
+  cv::Mat P1;
+  cv::Mat P2;
+  cv::Mat Q;
 
   cv::stereoRectify(
     K1,
@@ -523,7 +526,7 @@ void Settings::precomputeRectificationMaps() {
   if (sensor_ == System::IMU_STEREO) {
     Eigen::Matrix3f eigenR_r1_u1;
     cv::cv2eigen(R_r1_u1, eigenR_r1_u1);
-    Sophus::SE3f T_r1_u1(eigenR_r1_u1, Eigen::Vector3f::Zero());
+    const Sophus::SE3f T_r1_u1(eigenR_r1_u1, Eigen::Vector3f::Zero());
     Tbc_ = Tbc_ * T_r1_u1.inverse();
   }
 }

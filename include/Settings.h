@@ -59,12 +59,12 @@ public:
   /*
    * Return string of settings
    */
-  std::string Str() const;
+  [[nodiscard]] std::string Str() const;
 
   /*
    * Getter methods
    */
-  CameraType cameraType() {
+  CameraType cameraType() const {
     return cameraType_;
   }
   GeometricCamera* camera1() {
@@ -74,142 +74,142 @@ public:
     return calibration2_;
   }
   cv::Mat camera1DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion1_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
+    return {static_cast<int>(vPinHoleDistorsion1_.size()), 1, CV_32F, vPinHoleDistorsion1_.data()};
   }
   cv::Mat camera2DistortionCoef() {
-    return cv::Mat(vPinHoleDistorsion2_.size(), 1, CV_32F, vPinHoleDistorsion1_.data());
+    return {static_cast<int>(vPinHoleDistorsion2_.size()), 1, CV_32F, vPinHoleDistorsion1_.data()};
   }
 
-  Sophus::SE3f Tlr() {
+  Sophus::SE3f Tlr() const {
     return Tlr_;
   }
-  float bf() {
+  float bf() const {
     return bf_;
   }
-  float b() {
+  float b() const {
     return b_;
   }
-  float thDepth() {
+  float thDepth() const {
     return thDepth_;
   }
 
-  bool needToUndistort() {
+  bool needToUndistort() const {
     return bNeedToUndistort_;
   }
 
-  cv::Size newImSize() {
+  cv::Size newImSize() const {
     return newImSize_;
   }
-  float fps() {
+  float fps() const {
     return fps_;
   }
-  bool rgb() {
+  bool rgb() const {
     return bRGB_;
   }
-  bool needToResize() {
+  bool needToResize() const {
     return bNeedToResize1_;
   }
-  bool needToRectify() {
+  bool needToRectify() const {
     return bNeedToRectify_;
   }
 
-  float noiseGyro() {
+  float noiseGyro() const {
     return noiseGyro_;
   }
-  float noiseAcc() {
+  float noiseAcc() const {
     return noiseAcc_;
   }
-  float gyroWalk() {
+  float gyroWalk() const {
     return gyroWalk_;
   }
-  float accWalk() {
+  float accWalk() const {
     return accWalk_;
   }
-  float imuFrequency() {
+  float imuFrequency() const {
     return imuFrequency_;
   }
-  Sophus::SE3f Tbc() {
+  Sophus::SE3f Tbc() const {
     return Tbc_;
   }
-  bool insertKFsWhenLost() {
+  bool insertKFsWhenLost() const {
     return insertKFsWhenLost_;
   }
 
-  float depthMapFactor() {
+  float depthMapFactor() const {
     return depthMapFactor_;
   }
 
-  int nFeatures() {
+  int nFeatures() const {
     return nFeatures_;
   }
-  int nLevels() {
+  int nLevels() const {
     return nLevels_;
   }
-  float initThFAST() {
+  float initThFAST() const {
     return initThFAST_;
   }
-  float minThFAST() {
+  float minThFAST() const {
     return minThFAST_;
   }
-  float scaleFactor() {
+  float scaleFactor() const {
     return scaleFactor_;
   }
 
-  float keyFrameSize() {
+  float keyFrameSize() const {
     return keyFrameSize_;
   }
-  float keyFrameLineWidth() {
+  float keyFrameLineWidth() const {
     return keyFrameLineWidth_;
   }
-  float graphLineWidth() {
+  float graphLineWidth() const {
     return graphLineWidth_;
   }
-  float pointSize() {
+  float pointSize() const {
     return pointSize_;
   }
-  float cameraSize() {
+  float cameraSize() const {
     return cameraSize_;
   }
-  float cameraLineWidth() {
+  float cameraLineWidth() const {
     return cameraLineWidth_;
   }
-  float viewPointX() {
+  float viewPointX() const {
     return viewPointX_;
   }
-  float viewPointY() {
+  float viewPointY() const {
     return viewPointY_;
   }
-  float viewPointZ() {
+  float viewPointZ() const {
     return viewPointZ_;
   }
-  float viewPointF() {
+  float viewPointF() const {
     return viewPointF_;
   }
-  float imageViewerScale() {
+  float imageViewerScale() const {
     return imageViewerScale_;
   }
 
-  std::string atlasLoadFile() {
+  std::string atlasLoadFile() const {
     return sLoadFrom_;
   }
-  std::string atlasSaveFile() {
+  std::string atlasSaveFile() const {
     return sSaveto_;
   }
 
-  float thFarPoints() {
+  float thFarPoints() const {
     return thFarPoints_;
   }
 
-  cv::Mat M1l() {
+  cv::Mat M1l() const {
     return M1l_;
   }
-  cv::Mat M2l() {
+  cv::Mat M2l() const {
     return M2l_;
   }
-  cv::Mat M1r() {
+  cv::Mat M1r() const {
     return M1r_;
   }
-  cv::Mat M2r() {
+  cv::Mat M2r() const {
     return M2r_;
   }
 
@@ -218,7 +218,7 @@ private:
   T readParameter(
     cv::FileStorage& fSettings, const std::string& name, bool& found, const bool required = true
   ) {
-    cv::FileNode node = fSettings[name];
+    const cv::FileNode node = fSettings[name];
     if (node.empty()) {
       if (required) {
         throw std::runtime_error(fmt::format("{} required parameter does not exist", name));

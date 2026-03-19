@@ -49,15 +49,15 @@ bool EdgeSE3ProjectXYZOnlyPose::write(std::ostream& os) const {
 }
 
 void EdgeSE3ProjectXYZOnlyPose::linearizeOplus() {
-  g2o::VertexSE3Expmap* vi        = static_cast<g2o::VertexSE3Expmap*>(_vertices[0]);
-  Eigen::Vector3d       xyz_trans = vi->estimate().map(Xw);
+  auto*                       vi        = static_cast<g2o::VertexSE3Expmap*>(_vertices[0]);
+  const Eigen::Vector3d       xyz_trans = vi->estimate().map(Xw);
 
-  double x = xyz_trans[0];
-  double y = xyz_trans[1];
-  double z = xyz_trans[2];
+  const double x = xyz_trans[0];
+  const double y = xyz_trans[1];
+  const double z = xyz_trans[2];
 
   Eigen::Matrix<double, 3, 6> SE3deriv;
-  SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x, 0.f, 0.f, 0.f, 1.f;
+  SE3deriv << 0.F, z, -y, 1.F, 0.F, 0.F, -z, 0.F, x, 0.F, 1.F, 0.F, y, -x, 0.F, 0.F, 0.F, 1.F;
 
   _jacobianOplusXi = -pCamera->projectJac(xyz_trans) * SE3deriv;
 }
@@ -91,18 +91,18 @@ bool EdgeSE3ProjectXYZOnlyPoseToBody::write(std::ostream& os) const {
 }
 
 void EdgeSE3ProjectXYZOnlyPoseToBody::linearizeOplus() {
-  g2o::VertexSE3Expmap* vi = static_cast<g2o::VertexSE3Expmap*>(_vertices[0]);
-  g2o::SE3Quat          T_lw(vi->estimate());
-  Eigen::Vector3d       X_l = T_lw.map(Xw);
-  Eigen::Vector3d       X_r = mTrl.map(T_lw.map(Xw));
+  auto*                 vi = static_cast<g2o::VertexSE3Expmap*>(_vertices[0]);
+  const g2o::SE3Quat    T_lw(vi->estimate());
+  const Eigen::Vector3d X_l = T_lw.map(Xw);
+  const Eigen::Vector3d X_r = mTrl.map(T_lw.map(Xw));
 
-  double x_w = X_l[0];
-  double y_w = X_l[1];
-  double z_w = X_l[2];
+  const double x_w = X_l[0];
+  const double y_w = X_l[1];
+  const double z_w = X_l[2];
 
   Eigen::Matrix<double, 3, 6> SE3deriv;
-  SE3deriv << 0.f, z_w, -y_w, 1.f, 0.f, 0.f, -z_w, 0.f, x_w, 0.f, 1.f, 0.f, y_w, -x_w, 0.f, 0.f,
-    0.f, 1.f;
+  SE3deriv << 0.F, z_w, -y_w, 1.F, 0.F, 0.F, -z_w, 0.F, x_w, 0.F, 1.F, 0.F, y_w, -x_w, 0.F, 0.F,
+    0.F, 1.F;
 
   _jacobianOplusXi = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
 }
@@ -140,22 +140,22 @@ bool EdgeSE3ProjectXYZ::write(std::ostream& os) const {
 }
 
 void EdgeSE3ProjectXYZ::linearizeOplus() {
-  g2o::VertexSE3Expmap*   vj = static_cast<g2o::VertexSE3Expmap*>(_vertices[1]);
-  g2o::SE3Quat            T(vj->estimate());
-  g2o::VertexSBAPointXYZ* vi        = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
-  Eigen::Vector3d         xyz       = vi->estimate();
-  Eigen::Vector3d         xyz_trans = T.map(xyz);
+  auto*                 vj        = static_cast<g2o::VertexSE3Expmap*>(_vertices[1]);
+  const g2o::SE3Quat    T(vj->estimate());
+  auto*                 vi        = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
+  const Eigen::Vector3d xyz       = vi->estimate();
+  const Eigen::Vector3d xyz_trans = T.map(xyz);
 
-  double x = xyz_trans[0];
-  double y = xyz_trans[1];
-  double z = xyz_trans[2];
+  const double x = xyz_trans[0];
+  const double y = xyz_trans[1];
+  const double z = xyz_trans[2];
 
   auto projectJac = -pCamera->projectJac(xyz_trans);
 
   _jacobianOplusXi = projectJac * T.rotation().toRotationMatrix();
 
   Eigen::Matrix<double, 3, 6> SE3deriv;
-  SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x, 0.f, 0.f, 0.f, 1.f;
+  SE3deriv << 0.F, z, -y, 1.F, 0.F, 0.F, -z, 0.F, x, 0.F, 1.F, 0.F, y, -x, 0.F, 0.F, 0.F, 1.F;
 
   _jacobianOplusXj = projectJac * SE3deriv;
 }
@@ -193,22 +193,22 @@ bool EdgeSE3ProjectXYZToBody::write(std::ostream& os) const {
 }
 
 void EdgeSE3ProjectXYZToBody::linearizeOplus() {
-  g2o::VertexSE3Expmap*   vj = static_cast<g2o::VertexSE3Expmap*>(_vertices[1]);
-  g2o::SE3Quat            T_lw(vj->estimate());
-  g2o::SE3Quat            T_rw = mTrl * T_lw;
-  g2o::VertexSBAPointXYZ* vi   = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
-  Eigen::Vector3d         X_w  = vi->estimate();
-  Eigen::Vector3d         X_l  = T_lw.map(X_w);
-  Eigen::Vector3d         X_r  = mTrl.map(T_lw.map(X_w));
+  auto*                 vj   = static_cast<g2o::VertexSE3Expmap*>(_vertices[1]);
+  const g2o::SE3Quat    T_lw(vj->estimate());
+  const g2o::SE3Quat    T_rw = mTrl * T_lw;
+  auto*                 vi   = static_cast<g2o::VertexSBAPointXYZ*>(_vertices[0]);
+  const Eigen::Vector3d X_w  = vi->estimate();
+  const Eigen::Vector3d X_l  = T_lw.map(X_w);
+  const Eigen::Vector3d X_r  = mTrl.map(T_lw.map(X_w));
 
   _jacobianOplusXi = -pCamera->projectJac(X_r) * T_rw.rotation().toRotationMatrix();
 
-  double x = X_l[0];
-  double y = X_l[1];
-  double z = X_l[2];
+  const double x = X_l[0];
+  const double y = X_l[1];
+  const double z = X_l[2];
 
   Eigen::Matrix<double, 3, 6> SE3deriv;
-  SE3deriv << 0.f, z, -y, 1.f, 0.f, 0.f, -z, 0.f, x, 0.f, 1.f, 0.f, y, -x, 0.f, 0.f, 0.f, 1.f;
+  SE3deriv << 0.F, z, -y, 1.F, 0.F, 0.F, -z, 0.F, x, 0.F, 1.F, 0.F, y, -x, 0.F, 0.F, 0.F, 1.F;
 
   _jacobianOplusXj = -pCamera->projectJac(X_r) * mTrl.rotation().toRotationMatrix() * SE3deriv;
 }
@@ -225,7 +225,7 @@ bool VertexSim3Expmap::read(std::istream& is) {
   }
   is >> cam2world[6];
 
-  float nextParam;
+  float nextParam = 0.F;
   for (size_t i = 0; i < pCamera1->size(); i++) {
     is >> nextParam;
     pCamera1->setParameter(nextParam, i);
@@ -241,7 +241,7 @@ bool VertexSim3Expmap::read(std::istream& is) {
 }
 
 bool VertexSim3Expmap::write(std::ostream& os) const {
-  g2o::Sim3     cam2world(estimate().inverse());
+  const g2o::Sim3 cam2world(estimate().inverse());
   g2o::Vector7d lv = cam2world.log();
   for (int i = 0; i < 7; i++) {
     os << lv[i] << " ";

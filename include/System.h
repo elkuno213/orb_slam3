@@ -63,15 +63,14 @@ public:
     BINARY_FILE = 1,
   };
 
-public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
   System(
     const std::string& strVocFile,
     const std::string& strSettingsFile,
-    const eSensor      sensor,
-    const bool         bUseViewer  = true,
-    const int          initFr      = 0,
+    eSensor            sensor,
+    bool               bUseViewer  = true,
+    int                initFr      = 0,
     const std::string& strSequence = std::string()
   );
 
@@ -211,7 +210,7 @@ private:
   LoopClosing* mpLoopCloser;
 
   // The viewer draws the map and the current camera pose. It uses Pangolin.
-  Viewer* mpViewer;
+  Viewer* mpViewer{nullptr};
 
   FrameDrawer* mpFrameDrawer;
   MapDrawer*   mpMapDrawer;
@@ -224,16 +223,16 @@ private:
 
   // Reset flag
   std::mutex mMutexReset;
-  bool       mbReset;
-  bool       mbResetActiveMap;
+  bool       mbReset{false};
+  bool       mbResetActiveMap{false};
 
   // Change mode flags
   std::mutex mMutexMode;
-  bool       mbActivateLocalizationMode;
-  bool       mbDeactivateLocalizationMode;
+  bool       mbActivateLocalizationMode{false};
+  bool       mbDeactivateLocalizationMode{false};
 
   // Shutdown flag
-  bool mbShutDown;
+  bool mbShutDown{false};
 
   // Tracking state
   int                       mTrackingState;

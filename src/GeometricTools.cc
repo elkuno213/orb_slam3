@@ -24,18 +24,18 @@
 namespace ORB_SLAM3 {
 
 Eigen::Matrix3f GeometricTools::ComputeF12(KeyFrame*& pKF1, KeyFrame*& pKF2) {
-  Sophus::SE3<float>                    Tc1w = pKF1->GetPose();
-  Sophus::Matrix3<float>                Rc1w = Tc1w.rotationMatrix();
-  Sophus::SE3<float>::TranslationMember tc1w = Tc1w.translation();
+  const Sophus::SE3<float>                    Tc1w  = pKF1->GetPose();
+  const Sophus::Matrix3<float>                Rc1w  = Tc1w.rotationMatrix();
+  const auto& tc1w = Tc1w.translation();
 
-  Sophus::SE3<float>                    Tc2w = pKF2->GetPose();
-  Sophus::Matrix3<float>                Rc2w = Tc2w.rotationMatrix();
-  Sophus::SE3<float>::TranslationMember tc2w = Tc2w.translation();
+  const Sophus::SE3<float>                    Tc2w  = pKF2->GetPose();
+  const Sophus::Matrix3<float>                Rc2w  = Tc2w.rotationMatrix();
+  const auto& tc2w = Tc2w.translation();
 
-  Sophus::Matrix3<float> Rc1c2 = Rc1w * Rc2w.transpose();
-  Eigen::Vector3f        tc1c2 = -Rc1c2 * tc2w + tc1w;
+  const Sophus::Matrix3<float> Rc1c2  = Rc1w * Rc2w.transpose();
+  const Eigen::Vector3f        tc1c2  = -Rc1c2 * tc2w + tc1w;
 
-  Eigen::Matrix3f tc1c2x = Sophus::SO3f::hat(tc1c2);
+  const Eigen::Matrix3f tc1c2x = Sophus::SO3f::hat(tc1c2);
 
   const Eigen::Matrix3f K1 = pKF1->mpCamera->toK_();
   const Eigen::Matrix3f K2 = pKF2->mpCamera->toK_();
@@ -56,7 +56,7 @@ bool GeometricTools::Triangulate(
   A.block<1, 4>(2, 0) = x_c2(0) * Tc2w.block<1, 4>(2, 0) - Tc2w.block<1, 4>(0, 0);
   A.block<1, 4>(3, 0) = x_c2(1) * Tc2w.block<1, 4>(2, 0) - Tc2w.block<1, 4>(1, 0);
 
-  Eigen::JacobiSVD<Eigen::Matrix4f> svd(A, Eigen::ComputeFullV);
+  const Eigen::JacobiSVD<Eigen::Matrix4f> svd(A, Eigen::ComputeFullV);
 
   Eigen::Vector4f x3Dh = svd.matrixV().col(3);
 

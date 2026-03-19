@@ -99,7 +99,7 @@ public:
   // ~Frame();
 
   // Extract ORB on the image. 0 for left image and 1 for right image.
-  void ExtractORB(int flag, const cv::Mat& im, const int x0, const int x1);
+  void ExtractORB(int flag, const cv::Mat& im, int x0, int x1);
 
   // Compute Bag of Words representation.
   void ComputeBoW();
@@ -110,14 +110,14 @@ public:
   // Set IMU velocity
   void SetVelocity(Eigen::Vector3f Vw);
 
-  Eigen::Vector3f GetVelocity() const;
+  [[nodiscard]] Eigen::Vector3f GetVelocity() const;
 
   // Set IMU pose and velocity (implicitly changes camera pose)
   void SetImuPoseVelocity(
     const Eigen::Matrix3f& Rwb, const Eigen::Vector3f& twb, const Eigen::Vector3f& Vwb
   );
 
-  Eigen::Matrix<float, 3, 1> GetImuPosition() const;
+  [[nodiscard]] Eigen::Matrix<float, 3, 1> GetImuPosition() const;
   Eigen::Matrix<float, 3, 3> GetImuRotation();
   Sophus::SE3<float>         GetImuPose();
 
@@ -134,18 +134,18 @@ public:
 
   bool ProjectPointDistort(MapPoint* pMP, cv::Point2f& kp, float& u, float& v);
 
-  Eigen::Vector3f inRefCoordinates(Eigen::Vector3f pCw);
+  Eigen::Vector3f inRefCoordinates(const Eigen::Vector3f& pCw);
 
   // Compute the cell of a keypoint (return false if outside the grid)
   bool PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY);
 
-  std::vector<std::size_t> GetFeaturesInArea(
+  [[nodiscard]] std::vector<std::size_t> GetFeaturesInArea(
     const float& x,
     const float& y,
     const float& r,
-    const int    minLevel = -1,
-    const int    maxLevel = -1,
-    const bool   bRight   = false
+    int          minLevel = -1,
+    int          maxLevel = -1,
+    bool         bRight   = false
   ) const;
 
   // Search a match for each keypoint in the left image to a keypoint in the right image.
@@ -164,39 +164,39 @@ public:
   bool imuIsPreintegrated();
   void setIntegrated();
 
-  bool isSet() const;
+  [[nodiscard]] bool isSet() const;
 
   // Computes rotation, translation and camera center matrices from the camera pose.
   void UpdatePoseMatrices();
 
   // Returns the camera center.
-  inline Eigen::Vector3f GetCameraCenter() {
+  Eigen::Vector3f GetCameraCenter() {
     return mOw;
   }
 
   // Returns inverse of rotation
-  inline Eigen::Matrix3f GetRotationInverse() {
+  Eigen::Matrix3f GetRotationInverse() {
     return mRwc;
   }
 
-  inline Sophus::SE3<float> GetPose() const {
+  [[nodiscard]] Sophus::SE3<float> GetPose() const {
     // TODO: can the Frame pose be accsessed from several threads? should this be protected somehow?
     return mTcw;
   }
 
-  inline Eigen::Matrix3f GetRwc() const {
+  [[nodiscard]] Eigen::Matrix3f GetRwc() const {
     return mRwc;
   }
 
-  inline Eigen::Vector3f GetOw() const {
+  [[nodiscard]] Eigen::Vector3f GetOw() const {
     return mOw;
   }
 
-  inline bool HasPose() const {
+  [[nodiscard]] bool HasPose() const {
     return mbHasPose;
   }
 
-  inline bool HasVelocity() const {
+  [[nodiscard]] bool HasVelocity() const {
     return mbHasVelocity;
   }
 

@@ -15,6 +15,13 @@ This is a modernized fork of the [original ORB-SLAM3](https://github.com/UZ-SLAM
 - spdlog integration for structured logging (replacing most cout/cerr)
 - C++20 standard enabled in CMake
 - GTest integration with DatasetRunner test suite
+- 29 clang-tidy checks enforced as WarningsAsErrors across all source files
+- `-Werror` enabled for fixed compiler warning categories
+- `#pragma once` replacing all `#ifndef` include guards
+- `nullptr` replacing all `NULL`/`static_cast<T*>(NULL)` patterns
+- `std::this_thread::sleep_for()` replacing all `usleep()` calls
+- `inline constexpr` replacing `FRAME_GRID_*` macros
+- `fmt::format` replacing `sprintf`
 
 ## Docker
 
@@ -122,22 +129,24 @@ Results are written to `./results/` on the host (mounted at `/orb-slam3/results`
 
 ## Modernization Roadmap
 
-### Phase 0: Mechanical Cleanup
-- [ ] Replace `static_cast<T*>(NULL)` with `nullptr` (76 occurrences, 10 src files)
-- [ ] Remove all `this->` member access (14 occurrences, 3 files)
-- [ ] Convert `#ifndef` header guards to `#pragma once` (31 headers)
-- [ ] Replace `usleep()` with `std::this_thread::sleep_for()` (39 calls)
-- [ ] Replace remaining `cout`/`cerr` with spdlog (88 occurrences)
-- [ ] Convert `#define FRAME_GRID_*` to `inline constexpr` (Frame.h)
-- [ ] Replace `sprintf` with `fmt::format` (1 occurrence)
+### Phase 0: Mechanical Cleanup — COMPLETE
+- [x] Replace `static_cast<T*>(NULL)` with `nullptr` (76 occurrences, 10 src files)
+- [x] Remove all `this->` member access (14 occurrences, 3 files)
+- [x] Convert `#ifndef` header guards to `#pragma once` (31 headers)
+- [x] Replace `usleep()` with `std::this_thread::sleep_for()` (39 calls)
+- [x] Replace remaining `cout`/`cerr` with spdlog (88 occurrences)
+- [x] Convert `#define FRAME_GRID_*` to `inline constexpr` (Frame.h)
+- [x] Replace `sprintf` with `fmt::format` (1 occurrence)
 
-### Phase 1: CMake Modernization
+### Phase 1: CMake + clang-tidy — COMPLETE
 - [x] Remove `Examples_old/` build targets and directory
 - [x] Convert to per-target `target_include_directories()`
 - [x] Replace hardcoded DBoW2/g2o `.so` paths with imported targets
 - [x] Add `CMAKE_EXPORT_COMPILE_COMMANDS`
-- [ ] Add ASan/UBSan and clang-tidy CMake options
-- [ ] Add `.clang-tidy` configuration
+- [x] Add ASan/UBSan and clang-tidy CMake options
+- [x] Add `.clang-tidy` with 29 checks enforced as WarningsAsErrors
+- [x] `-Werror` for fixed compiler warning categories
+- [x] Per-file clang-tidy fixes (34 source files, leaf-to-root order)
 
 ### Phase 2: Smart Pointers and RAII
 - [ ] Convert System-owned subsystems to `std::unique_ptr` (10 raw pointers)
